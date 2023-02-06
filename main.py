@@ -46,7 +46,7 @@ class BootScreen(tk.Tk):
         self.git_status_label = ttk.Label(self, background=glob_style.background_color_master)
         self.git_status_label.grid(row=2, column=0, sticky="n", padx=7, pady=7)
 
-        self.boot()
+        self.after(1000, self.boot)
 
     def boot(self):
         if self.prod_mode:
@@ -67,6 +67,8 @@ class BootScreen(tk.Tk):
                     else:
                         self.git_status_label["text"] = "Kein neues Update gefunden"
                         self.after(2000, self.start)
+
+                    break
                 except requests.Timeout:
                     time.sleep(1)
             else:
