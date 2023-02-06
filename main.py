@@ -80,6 +80,7 @@ class BootScreen(tk.Tk):
             self.after(1000, self.start)
 
     def start(self):
+        self.withdraw()
         glob_var.main_menu_frame = menus.MainMenu(self.prod_mode)
 
 

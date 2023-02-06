@@ -1,7 +1,7 @@
 from tkinter import ttk
 
 screen_resolution = "800x480"
-cursor = None
+cursor = "none"
 theme = "equilux"
 
 menu_button_style = ("Arial", 50)
