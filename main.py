@@ -1,5 +1,6 @@
 __version__ = "1.0"
 
+import json
 import tkinter as tk
 from tkinter import ttk
 from ttkthemes import ThemedStyle
@@ -25,6 +26,7 @@ class BootScreen(tk.Tk):
         self.style.set_theme(glob_style.theme)
         # self.style.configure('TButton', font=('Arial', 50))
         self.style.configure('TFrame', background=glob_style.background_color_frame)
+        self.style.configure("TCheckbutton", background=glob_style.background_color_frame)
 
         if prod_mode:
             self.attributes('-fullscreen', True)
@@ -85,6 +87,14 @@ class BootScreen(tk.Tk):
 
 
 def run(opt):
+    # load configuration JSON
+    if not os.path.exists("configurations.json"):
+        with open("configurations.json", "w") as outfile:
+            outfile.write(json.dumps(glob_var.default_config_json, indent=4))
+
+    with open('configurations.json', 'r') as json_file:
+        glob_var.config_json = json.load(json_file)
+
     if opt.prod_mode:
         pass
 
