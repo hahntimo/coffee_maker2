@@ -4,6 +4,7 @@ screen_resolution = "800x480"
 cursor = "none"
 theme = "equilux"
 
+label_style_small = ("Arial", 18)
 label_style_medium = ("Arial", 25)
 label_style_big = ("Arial", 30)
 background_color_master = "#464646"

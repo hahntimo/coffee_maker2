@@ -143,10 +143,10 @@ class ProfileMenu(helper.MenuFrame):
 
         # name (key)
         self.name_var = tk.StringVar(value=None)
-        self.name_label = ttk.Label(self.settings_frame, text="Name", font=glob_style.label_style_medium,
+        self.name_label = ttk.Label(self.settings_frame, text="Name", font=glob_style.label_style_small,
                                     background=glob_style.background_color_frame)
         self.name_label.grid(row=0, column=0, sticky="nes", padx=3, pady=3)
-        self.name_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_medium,
+        self.name_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_small,
                                     background=glob_style.background_color_frame,
                                     textvariable=self.name_var)
         self.name_entry.grid(row=0, column=1, sticky="nws", padx=3, pady=3)
@@ -157,7 +157,7 @@ class ProfileMenu(helper.MenuFrame):
         # blooming_bool
         self.blooming_bool_var = tk.BooleanVar(value=False)
         self.blooming_bool_label = ttk.Label(self.settings_frame, text="Blooming",
-                                             font=glob_style.label_style_medium,
+                                             font=glob_style.label_style_small,
                                              background=glob_style.background_color_frame)
         self.blooming_bool_label.grid(row=1, column=0, sticky="nes", padx=3, pady=3)
         self.blooming_bool_entry = ttk.Checkbutton(self.settings_frame,
@@ -167,11 +167,11 @@ class ProfileMenu(helper.MenuFrame):
         # blooming_duration
         self.blooming_duration_var = tk.StringVar()
         self.blooming_duration_label = ttk.Label(self.settings_frame, text="Blooming-Dauer (Sek.)",
-                                                 font=glob_style.label_style_medium,
+                                                 font=glob_style.label_style_small,
                                                  background=glob_style.background_color_frame)
         self.blooming_duration_label.grid(row=2, column=0, sticky="nes", padx=3, pady=3)
         self.blooming_duration_entry = ttk.Entry(self.settings_frame,
-                                                 font=glob_style.label_style_medium,
+                                                 font=glob_style.label_style_small,
                                                  background=glob_style.background_color_frame,
                                                  textvariable=self.blooming_duration_var)
         self.blooming_duration_entry.grid(row=2, column=1, sticky="nws", padx=3, pady=3)
@@ -184,10 +184,10 @@ class ProfileMenu(helper.MenuFrame):
         # coffee_gr_per_500ml
         self.water_ratio_var = tk.StringVar()
         self.water_ratio_label = ttk.Label(self.settings_frame, text="Mahlgut/500ml (gr.)",
-                                           font=glob_style.label_style_medium,
+                                           font=glob_style.label_style_small,
                                            background=glob_style.background_color_frame)
         self.water_ratio_label.grid(row=3, column=0, sticky="nes", padx=3, pady=3)
-        self.water_ratio_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_medium,
+        self.water_ratio_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_small,
                                            textvariable=self.water_ratio_var,
                                            background=glob_style.background_color_frame)
         self.water_ratio_entry.grid(row=3, column=1, sticky="nws", padx=3, pady=3)
@@ -200,10 +200,10 @@ class ProfileMenu(helper.MenuFrame):
         # brew_speed_ml_per_minute
         self.brew_speed_var = tk.StringVar()
         self.brew_speed_label = ttk.Label(self.settings_frame, text="Brühgeschwindigkeit (ml/min)",
-                                          font=glob_style.label_style_medium,
+                                          font=glob_style.label_style_small,
                                           background=glob_style.background_color_frame)
         self.brew_speed_label.grid(row=4, column=0, sticky="nes", padx=3, pady=3)
-        self.brew_speed_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_medium,
+        self.brew_speed_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_small,
                                           textvariable=self.brew_speed_var,
                                           background=glob_style.background_color_frame)
         self.brew_speed_entry.grid(row=4, column=1, sticky="nws", padx=3, pady=3)
@@ -216,10 +216,10 @@ class ProfileMenu(helper.MenuFrame):
         # brew_temperature_celsius
         self.brew_temperature_var = tk.StringVar()
         self.brew_temperature_label = ttk.Label(self.settings_frame, text="Brühtemperatur (C°)",
-                                                font=glob_style.label_style_medium,
+                                                font=glob_style.label_style_small,
                                                 background=glob_style.background_color_frame)
         self.brew_temperature_label.grid(row=5, column=0, sticky="nes", padx=3, pady=3)
-        self.brew_temperature_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_medium,
+        self.brew_temperature_entry = ttk.Entry(self.settings_frame, font=glob_style.label_style_small,
                                                 textvariable=self.brew_temperature_var,
                                                 background=glob_style.background_color_frame)
         self.brew_temperature_entry.grid(row=5, column=1, sticky="nws", padx=3, pady=3)
