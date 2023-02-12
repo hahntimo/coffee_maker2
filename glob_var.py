@@ -7,7 +7,7 @@ main_menu_frame = None
 
 brewing_frame = None
 profile_frame = None
-testing_frame = None
+test_frame = None
 settings_frame = None
 
 
@@ -22,9 +22,11 @@ default_config_json = {
         "servo_angle_brewing": 55
     },
     "profiles": {
-        "Reinigung": {"blooming_bool": True,
-                      "blooming_duration": 30,
-                      "coffee_gr_per_500ml": 31.5,
-                      "brew_speed_ml_per_minute": 200}
+        "Neues Profil": {"blooming_bool": True,
+                         "blooming_duration": 30,
+                         "blooming_amount_percent": 10.0,
+                         "coffee_gr_per_500ml": 30.0,
+                         "brew_speed_ml_per_minute": 200,
+                         "brew_temperature_celsius": 92.0}
     }
 }
