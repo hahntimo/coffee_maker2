@@ -16,7 +16,7 @@ class MenuFrame(tk.Toplevel):
 
 
 class NumPad(tk.Toplevel):
-    def __init__(self, prod_mode, input_field, info_message):
+    def __init__(self, prod_mode, input_field, info_message, input_type="float"):
         super().__init__()
         self.prod_mode = prod_mode
         self.geometry(glob_style.screen_resolution)
@@ -26,14 +26,16 @@ class NumPad(tk.Toplevel):
 
         self.input_field = input_field
         self.info_message = info_message
+        self.input_type = input_type
 
         self.grid_columnconfigure((0, 1, 2, 3), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        self.info_message_label = ttk.Label(self, text=self.info_message)
+        self.info_message_label = ttk.Label(self, text=self.info_message,
+                                            font=glob_style.label_style_medium)
         self.info_message_label.grid(row=0, column=0, columnspan=4, sticky="news", padx=5, pady=5)
 
-        self.value_display = ttk.Entry(self)
+        self.value_display = ttk.Entry(self, font=glob_style.label_style_big)
         self.value_display.grid(row=1, column=0, columnspan=4, sticky="news", padx=5, pady=5)
         self.value_display.insert(0, self.input_field.get())
 
@@ -77,7 +79,7 @@ class NumPad(tk.Toplevel):
         self.button_delete = ttk.Button(self, text="\u2190", command=self.remove_digit)
         self.button_delete.grid(row=2, column=3, rowspan=2, sticky="news", padx=5, pady=5)
 
-        self.button_enter = ttk.Button(self, text="ENTER", command=self.enter)
+        self.button_enter = ttk.Button(self, text="\u2936", command=self.enter)
         self.button_enter.grid(row=4, column=3, rowspan=2, sticky="news", padx=5, pady=5)
 
     def add_digit(self, value):
@@ -115,10 +117,11 @@ class Keyboard(tk.Toplevel):
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        self.info_message_label = ttk.Label(self, text=self.info_message)
+        self.info_message_label = ttk.Label(self, text=self.info_message,
+                                            font=glob_style.label_style_medium)
         self.info_message_label.grid(row=0, column=0, columnspan=11, sticky="news", padx=5, pady=5)
 
-        self.value_display = ttk.Entry(self)
+        self.value_display = ttk.Entry(self, font=glob_style.label_style_big)
         self.value_display.grid(row=1, column=0, columnspan=8, sticky="news", padx=5, pady=5)
         if self.return_type == "entry":
             self.value_display.insert(0, self.input_field.get())

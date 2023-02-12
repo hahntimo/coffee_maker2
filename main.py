@@ -22,9 +22,10 @@ class BootScreen(tk.Tk):
         self.style = ThemedStyle(self)
         self.style.set_theme(glob_style.theme)
         # self.style.configure('TButton', font=('Arial', 50))
-        self.style.configure('TFrame', background=glob_style.background_color_frame)
+        self.style.configure("TFrame", background=glob_style.background_color_frame)
         self.style.configure("TCheckbutton", background=glob_style.background_color_frame)
-        self.style.configure('Treeview', rowheight=30)
+        self.style.configure("Treeview", rowheight=30)
+        self.style.configure("TButton", font=glob_style.label_style_medium)
 
         if prod_mode:
             self.attributes('-fullscreen', True)
