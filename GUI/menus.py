@@ -7,7 +7,7 @@ import requests
 import os
 from pathlib import Path
 
-from GUI import helper, glob_style
+from GUI import helper, glob_style, analysis_menu
 import glob_var
 import main
 
@@ -39,7 +39,7 @@ class MainMenu(helper.MenuFrame):
         self.profile_button.grid(row=0, column=1, sticky="news", padx=7, pady=7)
 
         self.testing_icon = tk.PhotoImage(file="assets/icons/testing.png")
-        self.testing_button = ttk.Button(self.frame, text="Analyse", image=self.testing_icon,
+        self.testing_button = ttk.Button(self.frame, text="Testfunktionen", image=self.testing_icon,
                                          compound="top", command=self.start_test_menu)
         self.testing_button.grid(row=1, column=0, sticky="news", padx=7, pady=7)
 
@@ -68,7 +68,7 @@ class MainMenu(helper.MenuFrame):
 
     def start_test_menu(self):
         if glob_var.test_frame is None:
-            glob_var.test_frame = TestMenu(self.prod_mode)
+            glob_var.test_frame = analysis_menu.TestMenu(self.prod_mode)
         else:
             glob_var.test_frame.deiconify()
 
@@ -118,7 +118,7 @@ class ProfileMenu(helper.MenuFrame):
         # overview
         self.overview_frame = ttk.Frame(self)
         self.overview_frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.overview_frame.rowconfigure((0, 1), weight=1)
+        self.overview_frame.rowconfigure(0, weight=1)
         self.overview_frame.columnconfigure((0, 1), weight=1)
 
         self.overview_tree = ttk.Treeview(self.overview_frame, show="tree")
@@ -307,28 +307,6 @@ class ProfileMenu(helper.MenuFrame):
         self.withdraw()
 
 
-class TestMenu(helper.MenuFrame):
-    def __init__(self, prod_mode):
-        super().__init__(prod_mode)
-        self.rowconfigure(1, weight=1)
-        self.columnconfigure(0, weight=1)
-
-        self.menu_label = ttk.Label(self, text="Testfunktionen")
-        self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
-
-        self.frame = ttk.Frame(self)
-        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
-        self.frame.columnconfigure((0, 1), weight=1)
-
-        self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
-        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
-
-    def return_menu(self):
-        glob_var.main_menu_frame.deiconify()
-        self.withdraw()
-
-
 class SettingsMenu(helper.MenuFrame):
     def __init__(self, prod_mode):
         super().__init__(prod_mode)
@@ -393,6 +371,11 @@ class SettingsMenu(helper.MenuFrame):
             with open('configurations.json', 'r') as json_file:
                 glob_var.config_json = json.load(json_file)
 
+            if glob_var.profile_frame is not None:
+                glob_var.profile_frame.refresh_overview_tree()
+            if glob_var.switch_menu_frame is not None:
+                glob_var.switch_menu_frame.set_calibration_value()
+
     @staticmethod
     def git_pull():
         repo_path = Path(os.path.abspath(__file__)).parent.parent.absolute()
@@ -408,7 +391,9 @@ class SettingsMenu(helper.MenuFrame):
 
                 if current_repo_state != repository.head.commit:
                     messagebox.showinfo(title="Update via GitHub",
-                                        message="Neues Version heruntergeladen. Bitte neustarten.")
+                                        message="Neues Version heruntergeladen. "
+                                                "Kaffeemaschine wird neu gestartet.")
+                    os.system('sudo shutdown -r now')
                 else:
                     messagebox.showinfo(title="Update via GitHub",
                                         message="Keine neue Version gefunden.")

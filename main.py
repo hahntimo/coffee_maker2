@@ -7,10 +7,10 @@ from ttkthemes import ThemedStyle
 import argparse
 import os
 from PIL import Image, ImageTk
+from multiprocessing import Manager
 
 import glob_var
-from GUI import glob_style
-from GUI import menus
+from GUI import glob_style, menus
 
 
 class BootScreen(tk.Tk):
@@ -24,8 +24,9 @@ class BootScreen(tk.Tk):
         # self.style.configure('TButton', font=('Arial', 50))
         self.style.configure("TFrame", background=glob_style.background_color_frame)
         self.style.configure("TCheckbutton", background=glob_style.background_color_frame)
-        self.style.configure("Treeview", rowheight=30)
+        self.style.configure("Treeview", rowheight=40)
         self.style.configure("TButton", font=glob_style.label_style_medium)
+        self.style.configure("TScale", background=glob_style.background_color_frame)
 
         if prod_mode:
             self.attributes('-fullscreen', True)
@@ -44,13 +45,19 @@ class BootScreen(tk.Tk):
                                    background=glob_style.background_color_master)
         self.logo_label.grid(row=1, column=0, sticky="news", padx=7, pady=7)
 
-        if not self.prod_mode:
-            self.dev_mode_label = ttk.Label(self, text="developer mode", background=glob_style.background_color_master)
-            self.dev_mode_label.grid(row=2, column=0, sticky="n", padx=7, pady=7)
+        label_text = "productive mode" if self.prod_mode else "developer mode"
+        self.dev_mode_label = ttk.Label(self, text=label_text, background=glob_style.background_color_master)
+        self.dev_mode_label.grid(row=2, column=0, sticky="n", padx=7, pady=7)
 
-        self.after(4000, self.start)
+        ms_delay = 4000 if self.prod_mode else 1000
+        self.after(ms_delay, self.start)
 
     def start(self):
+        # define mp managers & mp data handlers
+        glob_var.switch_manager = Manager()
+        glob_var.switch_mp_data = glob_var.switch_manager.dict()
+
+        # switch to main menu
         self.withdraw()
         glob_var.main_menu_frame = menus.MainMenu(self.prod_mode)
 
@@ -58,14 +65,16 @@ class BootScreen(tk.Tk):
 def run(opt):
     # load configuration JSON
     if not os.path.exists("configurations.json"):
-        with open("configurations.json", "w") as outfile:
-            outfile.write(json.dumps(glob_var.default_config_json, indent=4))
+        with open("configurations.json", "w") as config_file:
+            config_file.write(json.dumps(glob_var.default_config_json, indent=4))
 
     with open('configurations.json', 'r') as json_file:
         glob_var.config_json = json.load(json_file)
 
     if opt.prod_mode:
-        pass
+        import controllers
+        glob_var.switch_process = controllers.SwitchController(glob_var.switch_mp_data)
+        glob_var.switch_process.start()
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()

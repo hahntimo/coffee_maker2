@@ -1,16 +1,34 @@
-config_json = None
-
-
-# menu frames
+# --- menu frames ---
 boot_frame = None
 main_menu_frame = None
 
+# main menu
 brewing_frame = None
 profile_frame = None
 test_frame = None
 settings_frame = None
 
+# test menu
+pump_menu_frame = None
+heater_menu_frame = None
+can_spinner_menu_frame = None
+switch_menu_frame = None
 
+# --- processes ---
+pump_process = None
+heater_process = None
+can_spinner_process = None
+switch_process = None
+switch_manager = None
+switch_mp_data = None
+
+
+# --- pins ---
+PIN_SWITCH_SERVO = 13
+
+
+# --- configuration JSON ---
+config_json = None
 default_config_json = {
     "settings": {
         "sound_on": True
