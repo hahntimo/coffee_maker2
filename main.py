@@ -53,10 +53,6 @@ class BootScreen(tk.Tk):
         self.after(ms_delay, self.start)
 
     def start(self):
-        # define mp managers & mp data handlers
-        glob_var.switch_manager = Manager()
-        glob_var.switch_mp_data = glob_var.switch_manager.dict()
-
         # switch to main menu
         self.withdraw()
         glob_var.main_menu_frame = menus.MainMenu(self.prod_mode)
@@ -70,6 +66,11 @@ def run(opt):
 
     with open('configurations.json', 'r') as json_file:
         glob_var.config_json = json.load(json_file)
+
+    # define mp managers & mp data handlers
+    glob_var.switch_manager = Manager()
+    glob_var.switch_mp_data = glob_var.switch_manager.dict()
+    glob_var.switch_mp_data["angle"] = glob_var.config_json["calibration"]["servo_angle_heater"]
 
     if opt.prod_mode:
         import controllers
