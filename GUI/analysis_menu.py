@@ -20,18 +20,26 @@ class TestMenu(helper.MenuFrame):
         self.frame.rowconfigure((0, 1), weight=1)
         self.frame.columnconfigure((0, 1), weight=1)
 
-        self.start_pump_menu_button = ttk.Button(self.frame, text="Pumpe", command=self.start_pump_menu)
+        self.pump_icon = tk.PhotoImage(file="assets/icons/pump.png")
+        self.start_pump_menu_button = ttk.Button(self.frame, text="Pumpe", image=self.pump_icon,
+                                                 compound="top", command=self.start_pump_menu)
         self.start_pump_menu_button.grid(row=0, column=0, sticky="news", padx=7, pady=7)
 
+        self.heater_icon = tk.PhotoImage(file="assets/icons/heater.png")
         self.start_heater_menu_button = ttk.Button(self.frame, text="Heizelement",
+                                                   image=self.heater_icon, compound="top",
                                                    command=self.start_heater_menu)
         self.start_heater_menu_button.grid(row=0, column=1, sticky="news", padx=7, pady=7)
 
+        self.spinner_icon = tk.PhotoImage(file="assets/icons/spinner.png")
         self.start_can_spinner_menu_button = ttk.Button(self.frame, text="Drehteller",
+                                                        image=self.spinner_icon, compound="top",
                                                         command=self.start_can_spinner_menu)
         self.start_can_spinner_menu_button.grid(row=1, column=0, sticky="news", padx=7, pady=7)
 
+        self.switch_icon = tk.PhotoImage(file="assets/icons/switch.png")
         self.start_switch_menu_button = ttk.Button(self.frame, text="Wasserweiche",
+                                                   image=self.switch_icon, compound="top",
                                                    command=self.start_switch_menu)
         self.start_switch_menu_button.grid(row=1, column=1, sticky="news", padx=7, pady=7)
 

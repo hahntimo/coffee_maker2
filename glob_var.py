@@ -51,8 +51,8 @@ default_config_json = {
     "calibration": {
         "pump_step_delay": 0.0,
         "spinner_step_delay": 0.0,
-        "servo_angle_heater": 160,
-        "servo_angle_brewing": 55
+        "servo_angle_heater": 55,
+        "servo_angle_brewing": 160
     },
     "profiles": {
         "Neues Profil": {"blooming_bool": True,
