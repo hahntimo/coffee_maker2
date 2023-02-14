@@ -14,17 +14,32 @@ heater_menu_frame = None
 can_spinner_menu_frame = None
 switch_menu_frame = None
 
-# --- processes ---
+# --- processes and mp manager data---
 pump_process = None
+pump_mp_data = None
+
 heater_process = None
-can_spinner_process = None
+heater_mp_data = None
+
+spinner_process = None
+spinner_task_queue = None
+spinner_output_queue = None
+
+# switch
 switch_process = None
-switch_manager = None
 switch_mp_data = None
 
 
 # --- pins ---
+# servo
 PIN_SWITCH_SERVO = 13
+
+# spinner
+PIN_SPINNER_DIRECTION = 19
+PIN_SPINNER_STEP = 26
+PIN_SPINNER_MOTOR_1 = 16
+PIN_SPINNER_MOTOR_2 = 20
+PIN_SPINNER_MOTOR_3 = 21
 
 
 # --- configuration JSON ---

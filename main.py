@@ -7,7 +7,7 @@ from ttkthemes import ThemedStyle
 import argparse
 import os
 from PIL import Image, ImageTk
-from multiprocessing import Manager
+from multiprocessing import Manager, Queue
 
 import glob_var
 from GUI import glob_style, menus
@@ -68,14 +68,35 @@ def run(opt):
         glob_var.config_json = json.load(json_file)
 
     # define mp managers & mp data handlers
-    glob_var.switch_manager = Manager()
-    glob_var.switch_mp_data = glob_var.switch_manager.dict()
+    switch_manager = Manager()
+    glob_var.switch_mp_data = switch_manager.dict()
     glob_var.switch_mp_data["angle"] = glob_var.config_json["calibration"]["servo_angle_heater"]
 
+    glob_var.spinner_task_queue = Queue()
+    glob_var.spinner_output_queue = Queue()
+
+    pump_manager = Manager()
+    glob_var.pump_mp_data = pump_manager.dict()
+    glob_var.pump_mp_data["tasks"] = []
+
+    heater_manager = Manager()
+    glob_var.heater_mp_data = heater_manager.dict()
+    glob_var.heater_mp_data["celsius"] = 0
+
+    # define controller processes
     if opt.prod_mode:
         import controllers
+
+        # switch
         glob_var.switch_process = controllers.SwitchController(glob_var.switch_mp_data)
         glob_var.switch_process.start()
+
+        # spinner
+        glob_var.spinner_process = controllers.SpinnerController(glob_var.spinner_task_queue,
+                                                                 glob_var.spinner_output_queue)
+        glob_var.spinner_process.runtime_delay = \
+            glob_var.config_json["calibration"]["spinner_step_delay"]
+        glob_var.spinner_process.start()
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()
@@ -84,7 +105,7 @@ def run(opt):
 def params():
     parser = argparse.ArgumentParser(description='Coffee Maker',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--prod-mode', action='store_true', help='Allow running without an RasPi.')
+    parser.add_argument('--prod-mode', action='store_true', help='Allow running without a RasPi.')
     return parser.parse_args()
 
 

@@ -416,6 +416,12 @@ class SettingsMenu(helper.MenuFrame):
             self.attributes("-fullscreen", True)
 
     def quit(self):
+        if self.prod_mode:
+            glob_var.switch_process.stop()
+            glob_var.switch_process.join()
+
+            glob_var.spinner_process.stop()
+            glob_var.spinner_process.join()
         quit()
 
     def return_menu(self):
