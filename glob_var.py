@@ -49,8 +49,8 @@ default_config_json = {
         "sound_on": True
     },
     "calibration": {
-        "motor_pump": 0.0,
-        "motor_spinner": 0.0,
+        "pump_step_delay": 0.0,
+        "spinner_step_delay": 0.0,
         "servo_angle_heater": 160,
         "servo_angle_brewing": 55
     },
