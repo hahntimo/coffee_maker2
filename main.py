@@ -27,6 +27,7 @@ class BootScreen(tk.Tk):
         self.style.configure("Treeview", rowheight=40)
         self.style.configure("TButton", font=glob_style.label_style_medium)
         self.style.configure("TScale", background=glob_style.background_color_frame)
+        self.style.configure("TNotebook.Tab", font=("Arial", 20))
 
         if prod_mode:
             self.attributes('-fullscreen', True)

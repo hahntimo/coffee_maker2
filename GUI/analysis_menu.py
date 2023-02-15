@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
+import time
 
 from GUI import helper, glob_style
 import glob_var
@@ -75,19 +76,127 @@ class TestMenu(helper.MenuFrame):
 class PumpMenu(helper.MenuFrame):
     def __init__(self, prod_mode):
         super().__init__(prod_mode)
-        self.rowconfigure(1, weight=1)
+        self.current_tab = None
+        self.pump_running = False
+
+        self.rowconfigure((1, 2), weight=1)
         self.columnconfigure(0, weight=1)
 
-        self.menu_label = ttk.Label(self, text="Punpe")
+        self.menu_label = ttk.Label(self, text="Pumpe")
         self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
 
-        self.frame = ttk.Frame(self)
-        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.frame.rowconfigure((0, 1, 2), weight=1)
-        self.frame.columnconfigure(0, weight=1)
+        # --- control tabs ---
+        self.tabs = ttk.Notebook(self)
+        self.tab_flow_speed = ttk.Frame(self.tabs)
+        self.tab_time_volume = ttk.Frame(self.tabs)
+        self.tabs.add(self.tab_flow_speed, text="Flußgeschwindigkeit")
+        self.tabs.add(self.tab_time_volume, text="Dosierung")
+        self.tabs.grid(row=1, column=0, sticky="news", padx=7, pady=7)
+        self.tabs.bind('<<NotebookTabChanged>>', lambda _: self.tab_change())
+
+        # tab flow speed
+        self.tab_flow_speed.rowconfigure((0, 1), weight=1)
+        self.tab_flow_speed.columnconfigure(0, weight=1)
+
+        self.flow_rate = tk.IntVar(self, 0)
+        self.flow_rate_string = tk.StringVar(self, "STOP")
+
+        self.flow_rate_label = ttk.Label(self.tab_flow_speed, textvariable=self.flow_rate_string,
+                                         font=glob_style.label_style_big,
+                                         background=glob_style.background_color_frame)
+        self.flow_rate_label.grid(row=0, column=0, padx=7, pady=7)
+
+        self.flow_rate_slider = ttk.Scale(self.tab_flow_speed, variable=self.flow_rate,
+                                          from_=0, to=300, command=self.change_flow_rate)
+        self.flow_rate_slider.grid(row=1, column=0, sticky="we", padx=7, pady=7)
+
+        # tab time flow
+        self.tab_time_volume.rowconfigure((0, 1, 2, 3), weight=1)
+        self.tab_time_volume.columnconfigure((0, 1), weight=1)
+
+        self.volume_label = ttk.Label(self.tab_time_volume, text="Volumen (ml)",
+                                      font=glob_style.label_style_medium,
+                                      background=glob_style.background_color_frame)
+        self.volume_label.grid(row=0, column=0, sticky="e", padx=7, pady=7)
+        self.volume_entry = ttk.Entry(self.tab_time_volume, font=glob_style.label_style_medium)
+        self.volume_entry.grid(row=0, column=1, padx=7, pady=7)
+        self.volume_entry.bind("<Button-1>",
+                               lambda _: helper.NumPad(prod_mode=self.prod_mode,
+                                                       input_field=self.volume_entry,
+                                                       input_type="float",
+                                                       info_message="Volumen in Milliliter"))
+
+        self.time_span_label = ttk.Label(self.tab_time_volume, text="Zeitraum (min.)",
+                                         font=glob_style.label_style_medium,
+                                         background=glob_style.background_color_frame)
+        self.time_span_label.grid(row=1, column=0, sticky="e", padx=7, pady=7)
+        self.time_span_entry = ttk.Entry(self.tab_time_volume, font=glob_style.label_style_medium)
+        self.time_span_entry.grid(row=1, column=1, padx=7, pady=7)
+        self.time_span_entry.bind("<Button-1>",
+                                  lambda _: helper.NumPad(prod_mode=self.prod_mode,
+                                                          input_field=self.time_span_entry,
+                                                          input_type="time",
+                                                          info_message="Zeitraum in Minuten"))
+
+        self.progress_bar_status = tk.DoubleVar(self, 0)
+        self.progress_bar = ttk.Progressbar(self.tab_time_volume, maximum=100)
+        self.progress_bar.grid(row=2, column=0, columnspan=2, sticky="we", padx=7, pady=7)
+
+        self.start_stop_button = ttk.Button(self.tab_time_volume, text="start",
+                                            command=self.start_stop_time_volume)
+        self.start_stop_button.grid(row=3, column=0, columnspan=2, padx=7, pady=7)
+
+        # --- calibration frame ---
+        self.calibration_frame = ttk.Frame(self)
+        self.calibration_frame.grid(row=2, column=0, sticky="news", padx=7, pady=7)
+        self.calibration_frame.rowconfigure(0, weight=1)
+        self.calibration_frame.columnconfigure((0, 1), weight=1)
+
+        self.calibrate_step_delay_button = ttk.Button(self.calibration_frame, text="Motor kalibrieren",
+                                                      command=self.calibrate_motor_step_delay)
+        self.calibrate_step_delay_button.grid(row=0, column=0, sticky="we", padx=7, pady=7)
+
+        self.calibrate_water_flow_button = ttk.Button(self.calibration_frame, text="Flussrate kalibrieren",
+                                                      command=self.calibrate_water_flow)
+        self.calibrate_water_flow_button.grid(row=0, column=1, sticky="we", padx=7, pady=7)
 
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
-        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+        self.return_button.grid(row=3, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+
+    def tab_change(self):
+        tab_index = (self.tabs.index(self.tabs.select()))
+        if self.current_tab is not None and self.pump_running:
+            messagebox.showinfo(message="Pumpe gestoppt")
+            self.start_stop_button.configure(text="start")
+            self.flow_rate.set(0)
+            self.flow_rate_string.set("STOP")
+            self.progress_bar_status.set(0)
+            self.pump_running = False
+        elif self.current_tab is None:
+            self.current_tab = tab_index
+
+    def change_flow_rate(self, *args):
+        flow_rate = self.flow_rate.get()
+        if flow_rate == 0:
+            self.pump_running = False
+            self.flow_rate_string.set("STOP")
+        else:
+            self.pump_running = True
+            self.flow_rate_string.set(f"{flow_rate} ml/min.")
+
+    def start_stop_time_volume(self):
+        if self.pump_running:
+            self.pump_running = False
+            self.start_stop_button.configure(text="start")
+        else:
+            self.pump_running = True
+            self.start_stop_button.configure(text="stop")
+
+    def calibrate_motor_step_delay(self):
+        pass
+
+    def calibrate_water_flow(self):
+        pass
 
     def return_menu(self):
         glob_var.test_frame.deiconify()
@@ -140,9 +249,10 @@ class SwitchMenu(helper.MenuFrame):
 
         self.slider_value = tk.IntVar(self, glob_var.config_json["calibration"]["servo_angle_heater"])
         self.calibration_slider = ttk.Scale(self.calibration_frame, from_=180, to=0,
-                                            variable=self.slider_value,
-                                            command=lambda _: self.change_switch_state(self.slider_value.get()))
+                                            variable=self.slider_value)
         self.calibration_slider.grid(row=1, column=0, columnspan=3, sticky="we", padx=7, pady=7)
+        self.calibration_slider.bind("<ButtonRelease-1>",
+                                     lambda _: self.change_switch_state(self.slider_value.get()))
 
         self.brew_calibration_value = tk.StringVar(self)
         self.brew_calibration_entry = ttk.Entry(self.calibration_frame,
@@ -212,7 +322,7 @@ class SpinnerMenu(helper.MenuFrame):
         self.frame.columnconfigure(0, weight=1)
 
         self.revolution_var = tk.IntVar(self, 0)
-        self.status_string = tk.StringVar(self, "Stop")
+        self.status_string = tk.StringVar(self, "STOP")
         self.status_label = ttk.Label(self.frame, font=glob_style.label_style_big,
                                       background=glob_style.background_color_frame,
                                       textvariable=self.status_string)
@@ -222,7 +332,7 @@ class SpinnerMenu(helper.MenuFrame):
                                 command=self.change_revolution)
         self.slider.grid(row=1, column=0, sticky="we", padx=7, pady=7)
 
-        self.calibration_button = ttk.Button(self.frame, text="Kalibrierung")
+        self.calibration_button = ttk.Button(self.frame, text="Kalibrierung", command=self.calibrate)
         self.calibration_button.grid(row=2, column=0, sticky="we", padx=7, pady=7)
 
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
@@ -235,9 +345,22 @@ class SpinnerMenu(helper.MenuFrame):
         elif revolution < 0:
             self.status_string.set(f"{revolution} Umdrehungen/min \u27F2")
         else:
-            self.status_string.set("stop")
+            self.status_string.set("STOP")
 
         glob_var.spinner_task_queue.put(("change_parameters", revolution))
+
+    @staticmethod
+    def calibrate():
+        glob_var.pitcher_spinner_input_queue.put(("calibrate", None))
+        while True:
+            time.sleep(0.1)
+            return_type, data = glob_var.pitcher_spinner_output_queue.get()
+            if return_type == "calibration_done":
+                glob_var.config_json["calibration"]["spinner_step_delay"] = data
+                with open("configurations.json", "w") as outfile:
+                    outfile.write(json.dumps(glob_var.config_json, indent=4))
+                helper.InfoMessage(title="Kalibrierung", message=f"Delay pro step: {data}")
+                break
 
     def return_menu(self):
         glob_var.test_frame.deiconify()

@@ -47,12 +47,6 @@ class SpinnerController(multiprocessing.Process):
         self.runtime_delay = 0  # delay occurring through runtime delay
         self.actual_delay = 0  # self.theoretical_delay - self.runtime_delay
         self.spr = 6400 * 2  # steps per revolution
-        """
-        self.DIR_PIN = 19
-        self.STEP_PIN = 26
-        self.MOTOR_PIN_1 = 16
-        self.MOTOR_PIN_2 = 20
-        self.MOTOR_PIN_3 = 21"""
 
     def run(self):
         self.set_pins()
