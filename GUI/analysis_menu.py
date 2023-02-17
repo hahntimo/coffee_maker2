@@ -139,7 +139,8 @@ class PumpMenu(helper.MenuFrame):
                                                           info_message="Zeitraum in Minuten"))
 
         self.progress_bar_status = tk.DoubleVar(self, 0)
-        self.progress_bar = ttk.Progressbar(self.tab_time_volume, maximum=100)
+        self.progress_bar = ttk.Progressbar(self.tab_time_volume, maximum=100,
+                                            variable=self.progress_bar_status)
         self.progress_bar.grid(row=2, column=0, columnspan=2, sticky="we", padx=7, pady=7)
 
         self.start_stop_button = ttk.Button(self.tab_time_volume, text="start",
