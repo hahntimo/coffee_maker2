@@ -190,7 +190,7 @@ class PumpMenu(helper.MenuFrame):
         if remaining_steps != 0:
             percentage = ((target_steps - remaining_steps) / target_steps) * 100
             self.progress_bar_status.set(percentage)
-            self.after(500, self.refresh_progress_bar())
+            self.after(500, lambda: self.refresh_progress_bar())
         else:
             self.pump_running = False
             self.start_stop_button.configure(text="start")
