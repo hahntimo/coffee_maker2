@@ -203,7 +203,7 @@ class PumpController(multiprocessing.Process):
             self.process_data["remaining_steps"] = self.task_target_steps
             if self.task_target_steps != 0:
                 self.task_target_steps -= 1
-                GPIO.output(self.STEP_PIN, GPIO.HIGH)
+                GPIO.output(glob_var.PIN_PUMP_STEP, GPIO.HIGH)
                 time.sleep(self.actual_delay)
-                GPIO.output(self.STEP_PIN, GPIO.LOW)
+                GPIO.output(glob_var.PIN_PUMP_STEP, GPIO.LOW)
                 time.sleep(self.actual_delay)
