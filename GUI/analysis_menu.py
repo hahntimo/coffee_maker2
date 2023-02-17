@@ -184,13 +184,42 @@ class PumpMenu(helper.MenuFrame):
             self.pump_running = True
             self.flow_rate_string.set(f"{flow_rate} ml/min.")
 
+    def refresh_progress_bar(self):
+        target_steps = glob_var.pump_mp_data["target_steps"]
+        remaining_steps = glob_var.pump_mp_data["remaining_steps"]
+        if remaining_steps != 0:
+            percentage = ((target_steps - remaining_steps) / target_steps) * 100
+            self.progress_bar_status.set(percentage)
+            self.after(500, self.refresh_progress_bar())
+        else:
+            self.pump_running = False
+            self.start_stop_button.configure(text="start")
+
     def start_stop_time_volume(self):
         if self.pump_running:
+            glob_var.pump_task_queue.put({"task": "stop"})
             self.pump_running = False
             self.start_stop_button.configure(text="start")
         else:
-            self.pump_running = True
-            self.start_stop_button.configure(text="stop")
+            if self.volume_entry.get() == "" or self.time_span_entry.get() == "":
+                messagebox.showwarning(message="Unvollständige Angaben")
+            else:
+                time_input = self.time_span_entry.get().split(":")
+                if len(time_input) == 2:
+                    time_in_seconds = (int(time_input[0]) if time_input[0] != "" else 0) * 60 + \
+                                      (int(time_input[1]) if time_input[1] != "" else 0)
+                else:
+                    time_in_seconds = (int(time_input[0]) if time_input[0] != "" else 0) * 60
+
+                volume_in_ml = float(self.volume_entry.get().replace(",", "."))
+                task_dict = {"task": "volume_over_time",
+                             "volume": volume_in_ml,
+                             "time": time_in_seconds}
+                glob_var.pump_task_queue.put(task_dict)
+                self.pump_running = True
+                self.start_stop_button.configure(text="stop")
+                self.after(500, self.refresh_progress_bar)
+
 
     def calibrate_motor_step_delay(self):
         pass

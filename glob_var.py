@@ -16,6 +16,7 @@ switch_menu_frame = None
 
 # --- processes and mp manager data---
 pump_process = None
+pump_task_queue = None
 pump_mp_data = None
 
 heater_process = None
@@ -41,6 +42,13 @@ PIN_SPINNER_MOTOR_1 = 16
 PIN_SPINNER_MOTOR_2 = 20
 PIN_SPINNER_MOTOR_3 = 21
 
+# pump
+PIN_PUMP_DIRECTION = 24
+PIN_PUMP_STEP = 23
+PIN_PUMP_MOTOR_1 = 14
+PIN_PUMP_MOTOR_2 = 15
+PIN_PUMP_MOTOR_3 = 18
+
 
 # --- configuration JSON ---
 config_json = None
@@ -50,6 +58,7 @@ default_config_json = {
     },
     "calibration": {
         "pump_step_delay": 0.0,
+        "pump_ml_per_revolution": 5,
         "spinner_step_delay": 0.0,
         "servo_angle_heater": 55,
         "servo_angle_brewing": 160

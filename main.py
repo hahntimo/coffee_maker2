@@ -69,20 +69,25 @@ def run(opt):
         glob_var.config_json = json.load(json_file)
 
     # define mp managers & mp data handlers
+    # switch
     switch_manager = Manager()
     glob_var.switch_mp_data = switch_manager.dict()
     glob_var.switch_mp_data["angle"] = glob_var.config_json["calibration"]["servo_angle_heater"]
 
+    # spinner
     glob_var.spinner_task_queue = Queue()
     glob_var.spinner_output_queue = Queue()
 
+    # pump
+    glob_var.pump_task_queue = Queue()
     pump_manager = Manager()
     glob_var.pump_mp_data = pump_manager.dict()
-    glob_var.pump_mp_data["tasks"] = []
+    glob_var.pump_mp_data["target_steps"] = 0
+    glob_var.pump_mp_data["remaining_steps"] = 0
 
     heater_manager = Manager()
     glob_var.heater_mp_data = heater_manager.dict()
-    glob_var.heater_mp_data["celsius"] = 0
+    glob_var.heater_mp_data["target_celsius"] = 0
 
     # define controller processes
     if opt.prod_mode:
@@ -93,11 +98,19 @@ def run(opt):
         glob_var.switch_process.start()
 
         # spinner
-        glob_var.spinner_process = controllers.SpinnerController(glob_var.spinner_task_queue,
-                                                                 glob_var.spinner_output_queue)
-        glob_var.spinner_process.runtime_delay = \
-            glob_var.config_json["calibration"]["spinner_step_delay"]
+        glob_var.spinner_process = \
+            controllers.SpinnerController(task_queue=glob_var.spinner_task_queue,
+                                          output_queue=glob_var.spinner_output_queue,
+                                          runtime_delay=glob_var.config_json["calibration"]["spinner_step_delay"])
         glob_var.spinner_process.start()
+
+        # pump
+        glob_var.pump_process = \
+            controllers.PumpController(task_queue=glob_var.pump_task_queue,
+                                       process_data=glob_var.pump_mp_data,
+                                       switch_mp_data=glob_var.switch_mp_data,
+                                       config_json=glob_var.config_json
+                                       )
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()

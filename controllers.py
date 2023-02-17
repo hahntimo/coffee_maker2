@@ -2,6 +2,7 @@ import multiprocessing
 import RPi.GPIO as GPIO
 import time
 import threading
+import json
 
 import glob_var
 
@@ -35,7 +36,7 @@ class SwitchController(multiprocessing.Process):
 
 
 class SpinnerController(multiprocessing.Process):
-    def __init__(self, task_queue, output_queue):
+    def __init__(self, task_queue, output_queue, runtime_delay):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.output_queue = output_queue
@@ -44,7 +45,7 @@ class SpinnerController(multiprocessing.Process):
         self.direction = 1
         self.running = False
         self.theoretical_delay = 0  # theoretical pause between steps
-        self.runtime_delay = 0  # delay occurring through runtime delay
+        self.runtime_delay = runtime_delay # delay occurring through runtime delay
         self.actual_delay = 0  # self.theoretical_delay - self.runtime_delay
         self.spr = 6400 * 2  # steps per revolution
 
@@ -139,4 +140,71 @@ class SpinnerController(multiprocessing.Process):
     def cleanup(self):
         GPIO.cleanup()
         print("CLEANUP SUCCESS")
+
+
+class PumpController(multiprocessing.Process):
+    def __init__(self, task_queue, process_data, switch_mp_data, config_json):
+        multiprocessing.Process.__init__(self)
+        self.task_queue = task_queue
+        self.process_data = process_data
+        self.switch_mp_data = switch_mp_data
+
+        self.revolution = 0
+        self.direction = 0
+
+        self.theoretical_delay = 0  # theoretical pause between steps
+        self.runtime_delay = config_json["calibration"]["pump_step_delay"]  # delay occurring through runtime delay
+        self.actual_delay = 0  # self.theoretical_delay - self.runtime_delay
+        self.spr = 4000 * 2  # steps per revolution
+        self.ml_per_revolution = config_json["calibration"]["pump_ml_per_revolution"]
+        self.task_target_steps = 0
+
+        self.speed_tuple = None
+
+    def run(self):
+        self.set_pins()
+        threading.Thread(target=self.handler).start()
+
+        while True:
+            task_dict = self.task_queue.get()
+            if task_dict["task"] == "volume_over_time":
+                volume_in_ml = task_dict["volume"]
+                time_in_seconds = task_dict["time"]
+
+                self.actual_delay = 1 / self.spr
+                self.task_target_steps = int((volume_in_ml / self.ml_per_revolution) * (self.spr / 2))
+                self.actual_delay = time_in_seconds/(self.task_target_steps * 2)
+                self.process_data["target_steps"] = self.task_target_steps
+
+            elif task_dict["task"] == "constant_flow":
+                pass
+
+            elif task_dict["task"] == "volume_revolution_calibration":
+                self.task_target_steps = 0
+
+            elif task_dict["task"] == "stop":
+                self.task_target_steps = 0
+                self.process_data["remaining_steps"] = 0
+
+    def set_pins(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(glob_var.PIN_PUMP_DIRECTION, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_PUMP_STEP, GPIO.OUT)
+        GPIO.output(glob_var.PIN_PUMP_DIRECTION, self.direction)
+        GPIO.setup((self.MOTOR_PIN_1, self.MOTOR_PIN_2, self.MOTOR_PIN_3), GPIO.OUT)
+        GPIO.output((self.MOTOR_PIN_1, self.MOTOR_PIN_2, self.MOTOR_PIN_3), (1, 0, 1))
+
+    def set_speed(self):
+        pass
+
+    def handler(self):
+        while True:
+            if self.task_target_steps != 0:
+                self.process_data["remaining_steps"] = self.task_target_steps
+                self.task_target_steps -= 1
+
+                GPIO.output(self.STEP_PIN, GPIO.HIGH)
+                time.sleep(self.actual_delay)
+                GPIO.output(self.STEP_PIN, GPIO.LOW)
+                time.sleep(self.actual_delay)
 
