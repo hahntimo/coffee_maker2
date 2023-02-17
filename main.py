@@ -111,6 +111,7 @@ def run(opt):
                                        switch_mp_data=glob_var.switch_mp_data,
                                        config_json=glob_var.config_json
                                        )
+        glob_var.pump_process.start()
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()
