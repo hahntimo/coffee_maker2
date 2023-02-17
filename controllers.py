@@ -2,9 +2,10 @@ import multiprocessing
 import RPi.GPIO as GPIO
 import time
 import threading
-import json
 
 import glob_var
+
+GPIO.setwarnings(False)
 
 
 class SwitchController(multiprocessing.Process):
@@ -191,20 +192,18 @@ class PumpController(multiprocessing.Process):
         GPIO.setup(glob_var.PIN_PUMP_DIRECTION, GPIO.OUT)
         GPIO.setup(glob_var.PIN_PUMP_STEP, GPIO.OUT)
         GPIO.output(glob_var.PIN_PUMP_DIRECTION, self.direction)
-        GPIO.setup((self.MOTOR_PIN_1, self.MOTOR_PIN_2, self.MOTOR_PIN_3), GPIO.OUT)
-        GPIO.output((self.MOTOR_PIN_1, self.MOTOR_PIN_2, self.MOTOR_PIN_3), (1, 0, 1))
+        GPIO.setup((glob_var.PIN_PUMP_MOTOR_1, glob_var.PIN_PUMP_MOTOR_2, glob_var.PIN_PUMP_MOTOR_3), GPIO.OUT)
+        GPIO.output((glob_var.PIN_PUMP_MOTOR_1, glob_var.PIN_PUMP_MOTOR_2, glob_var.PIN_PUMP_MOTOR_3), (1, 0, 1))
 
     def set_speed(self):
         pass
 
     def handler(self):
         while True:
+            self.process_data["remaining_steps"] = self.task_target_steps
             if self.task_target_steps != 0:
-                self.process_data["remaining_steps"] = self.task_target_steps
                 self.task_target_steps -= 1
-
                 GPIO.output(self.STEP_PIN, GPIO.HIGH)
                 time.sleep(self.actual_delay)
                 GPIO.output(self.STEP_PIN, GPIO.LOW)
                 time.sleep(self.actual_delay)
-
