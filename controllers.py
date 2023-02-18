@@ -157,9 +157,12 @@ class PumpController(multiprocessing.Process):
         self.runtime_delay = config_json["calibration"]["pump_step_delay"]  # delay occurring through runtime delay
         self.actual_delay = 0  # self.theoretical_delay - self.runtime_delay
         self.spr = 4000 * 2  # steps per revolution
+
         self.ml_per_revolution = config_json["calibration"]["pump_ml_per_revolution"]
+        self.volume_calibration_target_steps = 100000
         self.task_target_steps = 0
 
+        self.config_json = config_json
         self.speed_tuple = None
 
     def run(self):
@@ -177,11 +180,14 @@ class PumpController(multiprocessing.Process):
                 self.actual_delay = time_in_seconds/(self.task_target_steps * 2)
                 self.process_data["target_steps"] = self.task_target_steps
 
-            elif task_dict["task"] == "constant_flow":
+            elif task_dict["task"] == "step_delay_calibration":
                 pass
 
             elif task_dict["task"] == "volume_revolution_calibration":
-                self.task_target_steps = 0
+                self.switch_mp_data["angle"] = self.config_json['calibration']['servo_angle_brewing']
+                self.actual_delay = 0
+                self.task_target_steps = self.volume_calibration_target_steps
+                self.process_data["target_steps"] = self.task_target_steps
 
             elif task_dict["task"] == "stop":
                 self.task_target_steps = 0

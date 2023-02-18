@@ -1,7 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+import json
 
 from GUI import glob_style
+import glob_var
 
 
 class MenuFrame(tk.Toplevel):
@@ -173,3 +175,73 @@ class Keyboard(tk.Toplevel):
         self.input_field.delete(0, tk.END)
         self.input_field.insert(0, self.value_display.get())
         self.withdraw()
+
+
+class CalibrationInput(MenuFrame):
+    def __init__(self, prod_mode):
+        super().__init__(prod_mode)
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.frame = ttk.Frame(self)
+        self.frame.grid(row=0, column=0, sticky="news", padx=7, pady=7)
+        self.frame.rowconfigure((0, 1, 2), weight=1)
+        self.frame.columnconfigure((0, 1), weight=1)
+
+        self.info_label = ttk.Label(self.frame, text="Kalibrierung abgeschlossen",
+                                    font=glob_style.label_style_big,
+                                    background=glob_style.background_color_frame)
+        self.info_label.grid(row=0, column=0, columnspan=2, padx=7, pady=7)
+
+        self.input_label = ttk.Label(self.frame, text="Wassermenge (in ml.):",
+                                     font=glob_style.label_style_medium,
+                                     background=glob_style.background_color_frame)
+        self.input_label.grid(row=1, column=0, sticky="e", padx=7, pady=7)
+
+        self.input_entry = ttk.Entry(self.frame, font=glob_style.label_style_medium)
+        self.input_entry.grid(row=1, column=1, sticky="we", padx=7, pady=7)
+        self.input_entry.bind("<Button-1>",
+                              lambda _: NumPad(prod_mode=self.prod_mode,
+                                               input_field=self.input_entry,
+                                               input_type="float",
+                                               info_message="Wassermenge in Milliliter"))
+
+        self.save_button = ttk.Button(self.frame, text="speichern",
+                                      command=self.save_calibration_result)
+        self.save_button.grid(row=2, column=0, columnspan=2, sticky="we", padx=7, pady=7)
+
+        self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
+        self.return_button.grid(row=1, column=0, sticky="we", padx=5, pady=5)
+
+    def save_calibration_result(self):
+        pumped_volume = self.input_entry.get()
+        if pumped_volume == "":
+            messagebox.showwarning(message="Bitte gültigen Wert eingeben")
+        else:
+            if self.prod_mode:
+                steps_per_revolution = glob_var.pump_process.spr
+                calibration_steps = glob_var.pump_process.volume_calibration_target_steps
+            else:
+                steps_per_revolution = 8000
+                calibration_steps = 100000
+
+            revolutions_done = calibration_steps / steps_per_revolution
+            ml_per_revolution = float(pumped_volume) / revolutions_done
+
+            if self.prod_mode:
+                glob_var.pump_process.ml_per_revolution = ml_per_revolution
+
+            glob_var.config_json["calibration"]["pump_ml_per_revolution"] = ml_per_revolution
+            with open("configurations.json", "w") as outfile:
+                outfile.write(json.dumps(glob_var.config_json, indent=4))
+
+            messagebox.showinfo(message=f"Steps: {calibration_steps}\n"
+                                        f"Umdrehungen: {revolutions_done}\n"
+                                        f"ml/Umdrehung: {ml_per_revolution}")
+
+            self.return_menu()
+
+    def return_menu(self):
+        glob_var.pump_menu_frame.deiconify()
+        self.destroy()

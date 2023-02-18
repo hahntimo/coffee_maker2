@@ -89,8 +89,8 @@ class PumpMenu(helper.MenuFrame):
         self.tabs = ttk.Notebook(self)
         self.tab_flow_speed = ttk.Frame(self.tabs)
         self.tab_time_volume = ttk.Frame(self.tabs)
-        self.tabs.add(self.tab_flow_speed, text="Flußgeschwindigkeit")
         self.tabs.add(self.tab_time_volume, text="Dosierung")
+        self.tabs.add(self.tab_flow_speed, text="Flußgeschwindigkeit")
         self.tabs.grid(row=1, column=0, sticky="news", padx=7, pady=7)
         self.tabs.bind('<<NotebookTabChanged>>', lambda _: self.tab_change())
 
@@ -181,20 +181,29 @@ class PumpMenu(helper.MenuFrame):
         if flow_rate == 0:
             self.pump_running = False
             self.flow_rate_string.set("STOP")
+            glob_var.pump_task_queue.put({"task": "stop"})
         else:
             self.pump_running = True
             self.flow_rate_string.set(f"{flow_rate} ml/min.")
+            time_in_seconds = (100000 * 60) / flow_rate
+            task_dict = {"task": "volume_over_time",
+                         "volume": 100000,
+                         "time": time_in_seconds}
+            glob_var.pump_task_queue.put(task_dict)
 
-    def refresh_progress_bar(self):
+    def refresh_progress_bar(self, calibration_mode=False):
         target_steps = glob_var.pump_mp_data["target_steps"]
         remaining_steps = glob_var.pump_mp_data["remaining_steps"]
         if remaining_steps != 0:
             percentage = ((target_steps - remaining_steps) / target_steps) * 100
             self.progress_bar_status.set(percentage)
-            self.after(500, lambda: self.refresh_progress_bar())
+            self.after(500, lambda: self.refresh_progress_bar(calibration_mode=calibration_mode))
         else:
             self.pump_running = False
             self.start_stop_button.configure(text="start")
+            print("DONE")
+            if calibration_mode:
+                input_frame = helper.CalibrationInput(self.prod_mode)
 
     def start_stop_time_volume(self):
         if self.pump_running:
@@ -221,12 +230,95 @@ class PumpMenu(helper.MenuFrame):
                 self.start_stop_button.configure(text="stop")
                 self.after(500, self.refresh_progress_bar)
 
-
     def calibrate_motor_step_delay(self):
         pass
 
     def calibrate_water_flow(self):
-        pass
+        if messagebox.askyesno(message="Kalibrierung starten?"):
+            messagebox.showinfo(message="Bitte Messbecher unterstellen")
+            glob_var.pump_task_queue.put({"task": "volume_revolution_calibration"})
+            self.refresh_progress_bar(calibration_mode=True)
+
+    def return_menu(self):
+        glob_var.test_frame.deiconify()
+        self.withdraw()
+
+
+class HeaterMenu(helper.MenuFrame):
+    def __init__(self, prod_mode):
+        super().__init__(prod_mode)
+        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.menu_label = ttk.Label(self, text="Drehteller")
+        self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
+
+        self.frame = ttk.Frame(self)
+        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
+        self.frame.rowconfigure((0, 1, 2), weight=1)
+        self.frame.columnconfigure(0, weight=1)
+
+        self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
+        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+
+    def return_menu(self):
+        glob_var.test_frame.deiconify()
+        self.withdraw()
+
+class SpinnerMenu(helper.MenuFrame):
+    def __init__(self, prod_mode):
+        super().__init__(prod_mode)
+        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.menu_label = ttk.Label(self, text="Drehteller")
+        self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
+
+        self.frame = ttk.Frame(self)
+        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
+        self.frame.rowconfigure((0, 1, 2), weight=1)
+        self.frame.columnconfigure(0, weight=1)
+
+        self.revolution_var = tk.IntVar(self, 0)
+        self.status_string = tk.StringVar(self, "STOP")
+        self.status_label = ttk.Label(self.frame, font=glob_style.label_style_big,
+                                      background=glob_style.background_color_frame,
+                                      textvariable=self.status_string)
+        self.status_label.grid(row=0, column=0, sticky="ns", padx=7, pady=7)
+
+        self.slider = ttk.Scale(self.frame, from_=-40, to=40, variable=self.revolution_var,
+                                command=self.change_revolution)
+        self.slider.grid(row=1, column=0, sticky="we", padx=7, pady=7)
+
+        self.calibration_button = ttk.Button(self.frame, text="Kalibrierung", command=self.calibrate)
+        self.calibration_button.grid(row=2, column=0, sticky="we", padx=7, pady=7)
+
+        self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
+        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+
+    def change_revolution(self, *args):
+        revolution = self.revolution_var.get()
+        if revolution > 0:
+            self.status_string.set(f"{revolution} Umdrehungen/min \u27F3")
+        elif revolution < 0:
+            self.status_string.set(f"{revolution} Umdrehungen/min \u27F2")
+        else:
+            self.status_string.set("STOP")
+
+        glob_var.spinner_task_queue.put(("change_parameters", revolution))
+
+    @staticmethod
+    def calibrate():
+        glob_var.pitcher_spinner_input_queue.put(("calibrate", None))
+        while True:
+            time.sleep(0.1)
+            return_type, data = glob_var.pitcher_spinner_output_queue.get()
+            if return_type == "calibration_done":
+                glob_var.config_json["calibration"]["spinner_step_delay"] = data
+                with open("configurations.json", "w") as outfile:
+                    outfile.write(json.dumps(glob_var.config_json, indent=4))
+                helper.InfoMessage(title="Kalibrierung", message=f"Delay pro step: {data}")
+                break
 
     def return_menu(self):
         glob_var.test_frame.deiconify()
@@ -331,66 +423,6 @@ class SwitchMenu(helper.MenuFrame):
     def set_calibration_value(self):
         self.brew_calibration_value.set(str(glob_var.config_json["calibration"]["servo_angle_brewing"]))
         self.heater_calibration_value.set(str(glob_var.config_json["calibration"]["servo_angle_heater"]))
-
-    def return_menu(self):
-        glob_var.test_frame.deiconify()
-        self.withdraw()
-
-
-class SpinnerMenu(helper.MenuFrame):
-    def __init__(self, prod_mode):
-        super().__init__(prod_mode)
-        self.rowconfigure(1, weight=1)
-        self.columnconfigure(0, weight=1)
-
-        self.menu_label = ttk.Label(self, text="Drehteller")
-        self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
-
-        self.frame = ttk.Frame(self)
-        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.frame.rowconfigure((0, 1, 2), weight=1)
-        self.frame.columnconfigure(0, weight=1)
-
-        self.revolution_var = tk.IntVar(self, 0)
-        self.status_string = tk.StringVar(self, "STOP")
-        self.status_label = ttk.Label(self.frame, font=glob_style.label_style_big,
-                                      background=glob_style.background_color_frame,
-                                      textvariable=self.status_string)
-        self.status_label.grid(row=0, column=0, sticky="ns", padx=7, pady=7)
-
-        self.slider = ttk.Scale(self.frame, from_=-40, to=40, variable=self.revolution_var,
-                                command=self.change_revolution)
-        self.slider.grid(row=1, column=0, sticky="we", padx=7, pady=7)
-
-        self.calibration_button = ttk.Button(self.frame, text="Kalibrierung", command=self.calibrate)
-        self.calibration_button.grid(row=2, column=0, sticky="we", padx=7, pady=7)
-
-        self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
-        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
-
-    def change_revolution(self, *args):
-        revolution = self.revolution_var.get()
-        if revolution > 0:
-            self.status_string.set(f"{revolution} Umdrehungen/min \u27F3")
-        elif revolution < 0:
-            self.status_string.set(f"{revolution} Umdrehungen/min \u27F2")
-        else:
-            self.status_string.set("STOP")
-
-        glob_var.spinner_task_queue.put(("change_parameters", revolution))
-
-    @staticmethod
-    def calibrate():
-        glob_var.pitcher_spinner_input_queue.put(("calibrate", None))
-        while True:
-            time.sleep(0.1)
-            return_type, data = glob_var.pitcher_spinner_output_queue.get()
-            if return_type == "calibration_done":
-                glob_var.config_json["calibration"]["spinner_step_delay"] = data
-                with open("configurations.json", "w") as outfile:
-                    outfile.write(json.dumps(glob_var.config_json, indent=4))
-                helper.InfoMessage(title="Kalibrierung", message=f"Delay pro step: {data}")
-                break
 
     def return_menu(self):
         glob_var.test_frame.deiconify()
