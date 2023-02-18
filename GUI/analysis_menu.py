@@ -54,7 +54,10 @@ class TestMenu(helper.MenuFrame):
             glob_var.pump_menu_frame.deiconify()
 
     def start_heater_menu(self):
-        pass
+        if glob_var.heater_menu_frame is None:
+            glob_var.heater_menu_frame = HeaterMenu(self.prod_mode)
+        else:
+            glob_var.heater_menu_frame.deiconify()
 
     def start_can_spinner_menu(self):
         if glob_var.can_spinner_menu_frame is None:
@@ -107,7 +110,7 @@ class PumpMenu(helper.MenuFrame):
         self.flow_rate_label.grid(row=0, column=0, padx=7, pady=7)
 
         self.flow_rate_slider = ttk.Scale(self.tab_flow_speed, variable=self.flow_rate,
-                                          from_=0, to=300, command=self.change_flow_rate)
+                                          from_=0, to=1000, command=self.change_flow_rate)
         self.flow_rate_slider.grid(row=1, column=0, sticky="we", padx=7, pady=7)
 
         # tab time flow
