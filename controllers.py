@@ -12,28 +12,34 @@ class SwitchController(multiprocessing.Process):
     def __init__(self, mp_data):
         multiprocessing.Process.__init__(self)
         self.mp_data = mp_data
-        self.servo = None
-        self.prev_state = None
+        self.brewer_switch_relais_state = False
+        self.heater_switch_relais_state = False
+        self.heater_on_off_relais_state = False
 
     def set_pins(self):
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(glob_var.PIN_SWITCH_SERVO, GPIO.OUT)
-        self.servo = GPIO.PWM(glob_var.PIN_SWITCH_SERVO, 50)
-        self.servo.start(0)
+        GPIO.setup(glob_var.PIN_HEATER_SWITCH_RELAIS, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_BREWER_SWITCH_RELAIS, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_HEATER_ON_OFF_RELAIS, GPIO.OUT)
 
     def run(self):
         print("switch process running")
         self.set_pins()
         while True:
-            new_angle = self.mp_data["angle"]
-            if new_angle != self.prev_state:
-                self.prev_state = new_angle
-                angle_signal = (new_angle / 18) + 2
-                GPIO.output(glob_var.PIN_SWITCH_SERVO, True)
-                self.servo.ChangeDutyCycle(angle_signal)
-                time.sleep(0.5)
-                GPIO.output(glob_var.PIN_SWITCH_SERVO, False)
-                self.servo.ChangeDutyCycle(0)
+            # heater switch relais
+            if self.mp_data["heater_switch"] != self.heater_switch_relais_state:
+                GPIO.output(glob_var.PIN_HEATER_SWITCH_RELAIS, self.mp_data["heater_switch"])
+                self.heater_switch_relais_state = self.mp_data["heater_switch"]
+
+            # brewer switch relais
+            if self.mp_data["brewer_switch"] != self.brewer_switch_relais_state:
+                GPIO.output(glob_var.PIN_BREWER_SWITCH_RELAIS, self.mp_data["brewer_switch"])
+                self.brewer_switch_relais_state = self.mp_data["brewer_switch"]
+
+            # heater on off relais
+            if self.mp_data["heater"] != self.heater_on_off_relais_state:
+                GPIO.output(glob_var.PIN_HEATER_ON_OFF_RELAIS, self.mp_data["heater"])
+                self.heater_on_off_relais_state = self.mp_data["heater"]
 
 
 class SpinnerController(multiprocessing.Process):
@@ -184,7 +190,8 @@ class PumpController(multiprocessing.Process):
                 pass
 
             elif task_dict["task"] == "volume_revolution_calibration":
-                self.switch_mp_data["angle"] = self.config_json['calibration']['servo_angle_brewing']
+                self.switch_mp_data["brewer_switch"] = True
+                self.switch_mp_data["heater_switch"] = False
                 self.actual_delay = 0
                 self.task_target_steps = self.volume_calibration_target_steps
                 self.process_data["target_steps"] = self.task_target_steps

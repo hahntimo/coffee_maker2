@@ -72,7 +72,9 @@ def run(opt):
     # switch
     switch_manager = Manager()
     glob_var.switch_mp_data = switch_manager.dict()
-    glob_var.switch_mp_data["angle"] = glob_var.config_json["calibration"]["servo_angle_heater"]
+    glob_var.switch_mp_data["heater_switch"] = True
+    glob_var.switch_mp_data["brewer_switch"] = False
+    glob_var.switch_mp_data["heater"] = False
 
     # spinner
     glob_var.spinner_task_queue = Queue()

@@ -261,12 +261,20 @@ class HeaterMenu(helper.MenuFrame):
         self.frame.rowconfigure((0, 1, 2), weight=1)
         self.frame.columnconfigure(0, weight=1)
 
+        self.test_button = ttk.Button(self.frame, text="RELAIS TEST", command=self.test)
+        self.test_button.grid(row=0, column=0)
+
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
         self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+
+    def test(self):
+        glob_var.switch_mp_data["heater"] = not glob_var.switch_mp_data["heater"]
+        print(glob_var.switch_mp_data)
 
     def return_menu(self):
         glob_var.test_frame.deiconify()
         self.withdraw()
+
 
 class SpinnerMenu(helper.MenuFrame):
     def __init__(self, prod_mode):
@@ -346,86 +354,29 @@ class SwitchMenu(helper.MenuFrame):
         self.brew_icon = tk.PhotoImage(file="assets/icons/can.png")
         self.set_brew_state_button = ttk.Button(self.control_frame, text="Brüharm",
                                                 image=self.brew_icon, compound="top",
-                                                command=lambda: self.change_switch_state(
-                                                    glob_var.config_json["calibration"]
-                                                    ["servo_angle_brewing"])
+                                                command=lambda: self.change_switch_state("brewer")
                                                 )
         self.set_brew_state_button.grid(row=0, column=0, sticky="news", padx=7, pady=7)
 
         self.heater_icon = tk.PhotoImage(file="assets/icons/heater_small.png")
         self.set_heater_state_button = ttk.Button(self.control_frame, text="Heizelement",
                                                   image=self.heater_icon, compound="top",
-                                                  command=lambda: self.change_switch_state(
-                                                      glob_var.config_json["calibration"]
-                                                      ["servo_angle_heater"]))
+                                                  command=lambda: self.change_switch_state("heater"))
         self.set_heater_state_button.grid(row=0, column=2, sticky="news", padx=7, pady=7)
 
-        # calibration frame
-        self.calibration_frame = ttk.Frame(self)
-        self.calibration_frame.grid(row=2, column=0, sticky="news", padx=7, pady=7)
-        self.calibration_frame.rowconfigure((0, 1, 2, 3), weight=1)
-        self.calibration_frame.columnconfigure((0, 1, 2), weight=1)
-
-        self.calibration_info = tk.StringVar(self, f"Kalibrierung: {glob_var.config_json['calibration']['servo_angle_heater']}°")
-        self.calibration_label = ttk.Label(self.calibration_frame, textvariable=self.calibration_info,
-                                           font=glob_style.label_style_medium,
-                                           background=glob_style.background_color_frame)
-        self.calibration_label.grid(row=0, column=0, columnspan=3, padx=7, pady=7)
-
-        self.slider_value = tk.IntVar(self, glob_var.config_json["calibration"]["servo_angle_heater"])
-        self.calibration_slider = ttk.Scale(self.calibration_frame, from_=180, to=0,
-                                            variable=self.slider_value)
-        self.calibration_slider.grid(row=1, column=0, columnspan=3, sticky="we", padx=7, pady=7)
-        self.calibration_slider.bind("<ButtonRelease-1>",
-                                     lambda _: self.change_switch_state(self.slider_value.get()))
-
-        self.brew_calibration_value = tk.StringVar(self)
-        self.brew_calibration_entry = ttk.Entry(self.calibration_frame,
-                                                font=glob_style.label_style_medium,
-                                                background=glob_style.background_color_frame,
-                                                textvariable=self.brew_calibration_value)
-        self.brew_calibration_entry.grid(row=2, column=0, padx=7, pady=7)
-        self.brew_calibration_entry.bind("<Button-1>",
-                                         lambda _: helper.NumPad(prod_mode=self.prod_mode,
-                                                                 input_field=self.brew_calibration_entry,
-                                                                 input_type="int",
-                                                                 info_message="Servo Winkel Brüharm"))
-
-        self.heater_calibration_value = tk.StringVar(self)
-        self.heater_calibration_entry = ttk.Entry(self.calibration_frame,
-                                                  font=glob_style.label_style_medium,
-                                                  background=glob_style.background_color_frame,
-                                                  textvariable=self.heater_calibration_value)
-        self.heater_calibration_entry.grid(row=2, column=2, padx=7, pady=7)
-        self.heater_calibration_entry.bind("<Button-1>",
-                                           lambda _: helper.NumPad(prod_mode=self.prod_mode,
-                                                                   input_field=self.heater_calibration_entry,
-                                                                   input_type="int",
-                                                                   info_message="Servo Winkel Heizelement"))
-
-        self.save_calibration_button = ttk.Button(self.calibration_frame, text="speichern",
-                                                  command=self.save_calibration)
-        self.save_calibration_button.grid(row=3, column=0, columnspan=3, padx=7, pady=7)
-
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
-        self.return_button.grid(row=3, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
+        self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
 
-        self.set_calibration_value()
-
-    def change_switch_state(self, servo_target_angle):
-        glob_var.switch_mp_data["angle"] = servo_target_angle
-        self.slider_value.set(servo_target_angle)
-        self.calibration_info.set(f"Kalibrierung: {servo_target_angle}°")
-
-    def save_calibration(self):
-        glob_var.config_json["calibration"]["servo_angle_brewing"] = int(self.brew_calibration_value.get())
-        glob_var.config_json["calibration"]["servo_angle_heater"] = int(self.heater_calibration_value.get())
-        with open("configurations.json", "w") as outfile:
-            outfile.write(json.dumps(glob_var.config_json, indent=4))
-
-    def set_calibration_value(self):
-        self.brew_calibration_value.set(str(glob_var.config_json["calibration"]["servo_angle_brewing"]))
-        self.heater_calibration_value.set(str(glob_var.config_json["calibration"]["servo_angle_heater"]))
+    @staticmethod
+    def change_switch_state(mode):
+        if mode == "heater":
+            print("heater")
+            glob_var.switch_mp_data["brewer_switch"] = False
+            glob_var.switch_mp_data["heater_switch"] = True
+        elif mode == "brewer":
+            print("brewer")
+            glob_var.switch_mp_data["brewer_switch"] = True
+            glob_var.switch_mp_data["heater_switch"] = False
 
     def return_menu(self):
         glob_var.test_frame.deiconify()

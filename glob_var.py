@@ -26,14 +26,14 @@ spinner_process = None
 spinner_task_queue = None
 spinner_output_queue = None
 
-# switch
 switch_process = None
 switch_mp_data = None
 
-
 # --- pins ---
-# servo
-PIN_SWITCH_SERVO = 13
+# relays
+PIN_BREWER_SWITCH_RELAIS = 5
+PIN_HEATER_SWITCH_RELAIS = 6
+PIN_HEATER_ON_OFF_RELAIS = 13
 
 # spinner
 PIN_SPINNER_DIRECTION = 19
@@ -59,9 +59,7 @@ default_config_json = {
     "calibration": {
         "pump_step_delay": 0.0,
         "pump_ml_per_revolution": 5,
-        "spinner_step_delay": 0.0,
-        "servo_angle_heater": 55,
-        "servo_angle_brewing": 160
+        "spinner_step_delay": 0.0
     },
     "profiles": {
         "Neues Profil": {"blooming_bool": True,
