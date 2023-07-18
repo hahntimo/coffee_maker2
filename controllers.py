@@ -22,6 +22,10 @@ class SwitchController(multiprocessing.Process):
         GPIO.setup(glob_var.PIN_BREWER_SWITCH_RELAIS, GPIO.OUT)
         GPIO.setup(glob_var.PIN_HEATER_ON_OFF_RELAIS, GPIO.OUT)
 
+        GPIO.output(glob_var.PIN_HEATER_SWITCH_RELAIS, self.heater_switch_relais_state)
+        GPIO.output(glob_var.PIN_BREWER_SWITCH_RELAIS, self.brewer_switch_relais_state)
+        GPIO.output(glob_var.PIN_HEATER_ON_OFF_RELAIS, self.heater_on_off_relais_state)
+
     def run(self):
         print("switch process running")
         self.set_pins()
