@@ -289,7 +289,7 @@ class HeaterMenu(helper.MenuFrame):
         self.ax = self.figure.add_subplot(111)
         self.ax.patch.set_facecolor(glob_style.background_color_master)
         self.ax.tick_params(axis='both', colors=glob_style.font_color)
-        self.ax.set_ylim(30, 100)
+        self.ax.set_ylim(0, 100)
 
         self.x_values = []
         self.y_values = []
