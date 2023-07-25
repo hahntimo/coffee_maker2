@@ -35,8 +35,7 @@ class BootScreen(tk.Tk):
 
         self.rowconfigure((0, 1, 2), weight=1)
         self.columnconfigure(0, weight=1)
-        self.welcome_label = ttk.Label(self, text=f"Kaldi OS {__version__}", font=("Arial", 40),
-                                       background=glob_style.background_color_master)
+        self.welcome_label = ttk.Label(self, text=f"Kaldi OS {__version__}", font=("Arial", 40), background=glob_style.background_color_master)
         self.welcome_label.grid(row=0, column=0, sticky="s", padx=7, pady=7)
 
         self.logo_image = Image.open("assets/coffein.png")
