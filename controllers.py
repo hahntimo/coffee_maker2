@@ -244,33 +244,3 @@ class HeaterController(multiprocessing.Process):
 
     def handler(self):
         pass
-"""
-class Heater(multiprocessing.Process):
-    def __init__(self, task_queue, output_queue):
-        multiprocessing.Process.__init__(self)
-        self.task_queue = task_queue
-        self.output_queue = output_queue
-
-        self.sensor = W1ThermSensor()
-
-        self.handling_task = False
-        self.target_temperature = 0
-
-    def run(self):
-        threading.Thread(target=self.handler).start()
-
-        while True:
-            new_task, data = self.task_queue.get()
-            if new_task == "set_temperature":
-                self.target_temperature = data
-                self.handling_task = True
-
-            if new_task == "stop":
-                self.handling_task = False
-
-    def handler(self):
-        while True:
-            if self.handling_task:
-                current_temp = self.sensor.get_temperature()
-                time.sleep(0.5)
-                self.output_queue.put(("current_temp", current_temp))"""
