@@ -14,7 +14,7 @@ heater_menu_frame = None
 can_spinner_menu_frame = None
 switch_menu_frame = None
 
-# --- processes and mp manager data---
+# --- processes and mp manager data ---
 pump_process = None
 pump_task_queue = None
 pump_mp_data = None

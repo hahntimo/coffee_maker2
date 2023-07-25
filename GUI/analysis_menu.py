@@ -2,6 +2,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import time
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import random
 
 from GUI import helper, glob_style
 import glob_var
@@ -253,23 +256,96 @@ class HeaterMenu(helper.MenuFrame):
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
-        self.menu_label = ttk.Label(self, text="Drehteller")
+        self.menu_label = ttk.Label(self, text="Heizelement")
         self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
 
         self.frame = ttk.Frame(self)
         self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.frame.rowconfigure((0, 1, 2), weight=1)
-        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
+        self.frame.columnconfigure((0, 1), weight=1)
 
-        self.test_button = ttk.Button(self.frame, text="RELAIS TEST", command=self.test)
-        self.test_button.grid(row=0, column=0)
+        self.target_temp_label = ttk.Label(self.frame, text="Zieltemperatur:",
+                                           background=glob_style.background_color_frame,
+                                           font=glob_style.label_style_medium)
+        self.target_temp_label.grid(row=0, column=0, sticky="ne", padx=7, pady=7)
+        self.target_temp_entry = ttk.Entry(self.frame, font=glob_style.label_style_medium)
+        self.target_temp_entry.grid(row=0, column=1, sticky="nw", padx=7, pady=7)
+        self.target_temp_entry.bind("<Button-1>",
+                                    lambda _: helper.NumPad(prod_mode=self.prod_mode,
+                                                            input_field=self.target_temp_entry,
+                                                            info_message="Bitte Zieltemperatur eingeben"))
+
+        self.current_temp_label = ttk.Label(self.frame, text="aktuelle Temp:",
+                                            background=glob_style.background_color_frame,
+                                            font=glob_style.label_style_medium)
+        self.current_temp_label.grid(row=1, column=0, sticky="ne", padx=7, pady=7)
+        self.current_temp = tk.StringVar(self.frame, "0 C°")
+        self.current_temp_entry = ttk.Label(self.frame, textvariable=self.current_temp,
+                                            background=glob_style.background_color_frame,
+                                            font=glob_style.label_style_medium)
+        self.current_temp_entry.grid(row=1, column=1, sticky="nw", padx=7, pady=7)
+
+        self.figure = Figure(figsize=(4, 2), dpi=100, facecolor=glob_style.background_color_frame)
+        self.ax = self.figure.add_subplot(111)
+        self.ax.patch.set_facecolor(glob_style.background_color_master)
+        self.ax.tick_params(axis='both', colors=glob_style.font_color)
+        self.ax.set_ylim(30, 100)
+
+        self.x_values = []
+        self.y_values = []
+
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.frame)
+        self.canvas.get_tk_widget().grid(row=2, column=0, columnspan=2, sticky="news")
+
+        self.button_text = tk.StringVar(self.frame, "Start")
+        self.start_stop_button = ttk.Button(self.frame, textvariable=self.button_text,
+                                            command=self.start_stop)
+        self.start_stop_button.grid(row=3, column=0, sticky="we", padx=7, pady=7)
+
+        self.clear_button = ttk.Button(self.frame, text="zurücksetzen", command=self.clear_graph)
+        self.clear_button.grid(row=3, column=1, sticky="we", padx=7, pady=7)
 
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
         self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
 
-    def test(self):
-        glob_var.switch_mp_data["heater"] = not glob_var.switch_mp_data["heater"]
-        print(glob_var.switch_mp_data)
+    def clear_graph(self):
+        self.ax.clear()
+        self.canvas.draw()
+        self.x_values = []
+        self.y_values = []
+
+    def update_data(self):
+        if glob_var.switch_mp_data["heater"]:
+            self.x_values.append(max(self.x_values) + 0.5) if self.x_values else self.x_values.append(0)
+            if self.prod_mode:
+                self.y_values.append(glob_var.heater_mp_data["current_temp"])
+            else:
+                self.y_values.append(random.randint(30, 100))
+            self.ax.plot(self.x_values, self.y_values, color=glob_style.font_color)
+            self.canvas.draw()
+            self.current_temp.set(f"{self.y_values[-1]} C°")
+            self.after(500, self.update_data)
+
+    def start_stop(self):
+        # stop
+        if glob_var.switch_mp_data["heater"]:
+            glob_var.heater_mp_data["heating_up"] = False
+            glob_var.switch_mp_data["heater"] = False
+            self.button_text.set("Start")
+
+        # start
+        elif self.target_temp_entry.get() == "":
+            messagebox.showinfo(message="Bitte Zieltemperatur eingeben")
+        elif float(self.target_temp_entry.get()) < 20:
+            messagebox.showinfo(message="Zieltemperatur muss mind. 20 C° betragen")
+        elif float(self.target_temp_entry.get()) > 100:
+            messagebox.showinfo(message="Zieltemperatur darf max. 100 C° betragen")
+        else:
+            glob_var.heater_mp_data["target_temp"] = float(self.target_temp_entry.get())
+            glob_var.heater_mp_data["heating_up"] = True
+            glob_var.switch_mp_data["heater"] = True
+            self.button_text.set("Stop")
+            self.update_data()
 
     def return_menu(self):
         glob_var.test_frame.deiconify()
@@ -339,7 +415,7 @@ class SpinnerMenu(helper.MenuFrame):
 class SwitchMenu(helper.MenuFrame):
     def __init__(self, prod_mode):
         super().__init__(prod_mode)
-        self.rowconfigure((1, 2), weight=1)
+        self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
         self.menu_label = ttk.Label(self, text="Wassserweiche")
@@ -349,7 +425,7 @@ class SwitchMenu(helper.MenuFrame):
         self.control_frame = ttk.Frame(self)
         self.control_frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
         self.control_frame.rowconfigure(0, weight=1)
-        self.control_frame.columnconfigure((0, 1, 2), weight=1)
+        self.control_frame.columnconfigure((0, 1), weight=1)
 
         self.brew_icon = tk.PhotoImage(file="assets/icons/can.png")
         self.set_brew_state_button = ttk.Button(self.control_frame, text="Brüharm",
@@ -362,7 +438,7 @@ class SwitchMenu(helper.MenuFrame):
         self.set_heater_state_button = ttk.Button(self.control_frame, text="Heizelement",
                                                   image=self.heater_icon, compound="top",
                                                   command=lambda: self.change_switch_state("heater"))
-        self.set_heater_state_button.grid(row=0, column=2, sticky="news", padx=7, pady=7)
+        self.set_heater_state_button.grid(row=0, column=1, sticky="news", padx=7, pady=7)
 
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
         self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
@@ -370,11 +446,9 @@ class SwitchMenu(helper.MenuFrame):
     @staticmethod
     def change_switch_state(mode):
         if mode == "heater":
-            print("heater")
             glob_var.switch_mp_data["brewer_switch"] = False
             glob_var.switch_mp_data["heater_switch"] = True
         elif mode == "brewer":
-            print("brewer")
             glob_var.switch_mp_data["brewer_switch"] = True
             glob_var.switch_mp_data["heater_switch"] = False
 

@@ -8,6 +8,7 @@ ttkthemes = "*"
 pillow = "*"
 gitpython = "*"
 requests = "*"
+matplotlib = "*"
 
 [dev-packages]
 

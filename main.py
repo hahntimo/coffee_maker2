@@ -89,7 +89,8 @@ def run(opt):
 
     heater_manager = Manager()
     glob_var.heater_mp_data = heater_manager.dict()
-    glob_var.heater_mp_data["target_celsius"] = 0
+    glob_var.heater_mp_data["target_temp"] = 0
+    glob_var.heater_mp_data["heating_up"] = False
 
     # define controller processes
     if opt.prod_mode:
@@ -114,6 +115,10 @@ def run(opt):
                                        config_json=glob_var.config_json
                                        )
         glob_var.pump_process.start()
+
+        # heater
+        glob_var.heater_process = \
+            controllers.HeaterController()
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()
