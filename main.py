@@ -88,6 +88,7 @@ def run(opt):
     glob_var.pump_mp_data["target_steps"] = 0
     glob_var.pump_mp_data["remaining_steps"] = 0
 
+    # heater
     heater_manager = Manager()
     glob_var.heater_mp_data = heater_manager.dict()
     glob_var.heater_mp_data["target_temp"] = 0
@@ -122,6 +123,7 @@ def run(opt):
             controllers.HeaterController(switch_mp_data=glob_var.switch_mp_data,
                                          pump_mp_data=glob_var.pump_mp_data,
                                          heater_mp_data=glob_var.heater_mp_data)
+        glob_var.heater_process.start()
 
     glob_var.boot_frame = BootScreen(opt.prod_mode)
     glob_var.boot_frame.mainloop()
