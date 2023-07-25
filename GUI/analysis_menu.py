@@ -320,7 +320,7 @@ class HeaterMenu(helper.MenuFrame):
             if self.prod_mode:
                 self.y_values.append(glob_var.heater_mp_data["current_temp"])
             else:
-                self.y_values.append(random.randint(30, 100))
+                self.y_values.append(random.randint(0, 100))
             self.ax.plot(self.x_values, self.y_values, color=glob_style.font_color)
             self.canvas.draw()
             self.current_temp.set(f"{self.y_values[-1]} C°")
