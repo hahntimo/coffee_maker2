@@ -77,31 +77,106 @@ class BrewMenu(helper.MenuFrame):
     def __init__(self, prod_mode):
         super().__init__(prod_mode)
         self.rowconfigure(1, weight=1)
-        self.columnconfigure(0, weight=1)
+        self.columnconfigure((0, 1), weight=1)
 
         self.menu_label = ttk.Label(self, text="Brühen")
-        self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
+        self.menu_label.grid(row=0, column=0, columnspan=2, sticky="n", padx=5, pady=5)
 
-        self.frame = ttk.Frame(self)
-        self.frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
-        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
-        self.frame.columnconfigure((0, 1), weight=1)
+        """control frame (select profile, start brewing etc.)"""
+        self.control_frame = ttk.Frame(self)
+        self.control_frame.grid(row=1, column=0, sticky="news", padx=7, pady=7)
+        self.control_frame.rowconfigure((0, 1, 2, 3), weight=1)
+        self.control_frame.columnconfigure((0, 1), weight=1)
 
-        # select profile
-        self.profile_select_label = ttk.Label(self.frame, text="Profil:",
+        self.profile_select_label = ttk.Label(self.control_frame, text="Profil:",
+                                              font=glob_style.label_style_small,
                                               background=glob_style.background_color_frame)
-        self.profile_select_label.grid(row=0, column=0, sticky="nes", padx=3, pady=3)
-
-        self.profile_select_entry = ttk.Combobox(self.frame,
+        self.profile_select_label.grid(row=0, column=0, sticky="news", padx=3, pady=3)
+        self.profile_select_entry = ttk.Combobox(self.control_frame,
                                                  values=list(glob_var.config_json["profiles"].keys()))
-        self.profile_select_entry.grid(row=0, column=1, sticky="nws", padx=3, pady=3)
+        self.profile_select_entry.grid(row=0, column=1, sticky="news", padx=3, pady=3)
+        self.profile_select_entry.bind("<<ComboboxSelected>>", lambda _: self.change_profile())
 
+        self.pre_heater_button = ttk.Button(self.control_frame, text="Kanne vorheizen")
+        self.pre_heater_button.grid(row=1, column=0, columnspan=2, sticky="news", padx=3, pady=3)
+
+        self.coffee_gram_label = ttk.Label(self.control_frame, text="Mahlgut (Gr.):",
+                                           font=glob_style.label_style_small,
+                                           background=glob_style.background_color_frame)
+        self.coffee_gram_label.grid(row=2, column=0, sticky="news", padx=3, pady=3)
+        self.coffee_gram_entry = ttk.Entry(self.control_frame)
+        self.coffee_gram_entry.grid(row=2, column=1, sticky="news", padx=3, pady=3)
+
+        self.start_brewing_button = ttk.Button(self.control_frame, text="Brühen")
+        self.start_brewing_button.grid(row=3, column=0, columnspan=2, sticky="news", padx=3, pady=3)
+
+        """parameter frame"""
+        self.parameter_frame = ttk.Frame(self)
+        self.parameter_frame.grid(row=1, column=1, sticky="news", padx=7, pady=7)
+        self.parameter_frame.rowconfigure((0, 1, 2, 3, 4), weight=1)
+        self.parameter_frame.columnconfigure((0, 1), weight=1)
+
+        # blooming on/off
+        self.blooming_bool_label = ttk.Label(self.parameter_frame, text="Blooming:",
+                                             font=glob_style.label_style_small,
+                                             background=glob_style.background_color_frame)
+        self.blooming_bool_label.grid(row=0, column=0, sticky="nes", padx=3, pady=3)
+        self.blooming_bool_var = tk.BooleanVar(self)
+        self.blooming_bool_entry = ttk.Checkbutton(self.parameter_frame,
+                                                   variable=self.blooming_bool_var)
+        self.blooming_bool_entry.grid(row=0, column=1, sticky="nws", padx=3, pady=3)
+
+        # blooming duration
+        self.blooming_duration_label = ttk.Label(self.parameter_frame, text="Blooming-Dauer (Sek.):",
+                                                 font=glob_style.label_style_small,
+                                                 background=glob_style.background_color_frame)
+        self.blooming_duration_label.grid(row=1, column=0, sticky="nes", padx=3, pady=3)
+        self.blooming_duration_var = tk.StringVar(self)
+        self.blooming_duration_entry = ttk.Entry(self.parameter_frame,
+                                                 textvariable=self.blooming_duration_var)
+        self.blooming_duration_entry.grid(row=1, column=1, sticky="nws", padx=3, pady=3)
+
+        # coffee gr per 500 ml
+        self.water_ratio_label = ttk.Label(self.parameter_frame, text="Mahlgut/500 ml (Gr.)",
+                                           font=glob_style.label_style_small,
+                                           background=glob_style.background_color_frame)
+        self.water_ratio_label.grid(row=2, column=0, sticky="nes", padx=3, pady=3)
+        self.water_ratio_var = tk.StringVar(self)
+        self.water_ratio_entry = ttk.Entry(self.parameter_frame, textvariable=self.water_ratio_var)
+        self.water_ratio_entry.grid(row=2, column=1, sticky="nws", padx=3, pady=3)
+
+        # brewing speed
+        self.brewing_speed_label = ttk.Label(self.parameter_frame, text="Brühgeschwindigkeit (ml/min):",
+                                             font=glob_style.label_style_small,
+                                             background=glob_style.background_color_frame)
+        self.brewing_speed_label.grid(row=3, column=0, sticky="nes", padx=3, pady=3)
+        self.brewing_speed_var = tk.StringVar(self)
+        self.brewing_speed_entry = ttk.Entry(self.parameter_frame, textvariable=self.brewing_speed_var)
+        self.brewing_speed_entry.grid(row=3, column=1, sticky="nws", padx=3, pady=3)
+
+        # brewing temperature
+        self.brewing_temperature_label = ttk.Label(self.parameter_frame, text="Brühtemperatur (C°):",
+                                                   font=glob_style.label_style_small,
+                                                   background=glob_style.background_color_frame)
+        self.brewing_temperature_label.grid(row=4, column=0, sticky="nes", padx=3, pady=3)
+        self.brewing_temperature_var = tk.StringVar(self)
+        self.brewing_temperature_entry = ttk.Entry(self.parameter_frame,
+                                                   textvariable=self.brewing_temperature_var)
+        self.brewing_temperature_entry.grid(row=4, column=1, sticky="nws", padx=3, pady=3)
+
+        """return button"""
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
         self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
 
     def return_menu(self):
         glob_var.main_menu_frame.deiconify()
         self.withdraw()
+
+    def change_profile(self):
+        profile = glob_var.config_json["profiles"][self.profile_select_entry.get()]
+        self.blooming_bool_var.set(profile["blooming_bool"])
+        self.blooming_
+
 
 
 class ProfileMenu(helper.MenuFrame):
@@ -183,7 +258,7 @@ class ProfileMenu(helper.MenuFrame):
 
         # coffee_gr_per_500ml
         self.water_ratio_var = tk.StringVar()
-        self.water_ratio_label = ttk.Label(self.settings_frame, text="Mahlgut/500ml (gr.)",
+        self.water_ratio_label = ttk.Label(self.settings_frame, text="Mahlgut/500 ml (gr.)",
                                            font=glob_style.label_style_small,
                                            background=glob_style.background_color_frame)
         self.water_ratio_label.grid(row=3, column=0, sticky="nes", padx=3, pady=3)
@@ -195,7 +270,7 @@ class ProfileMenu(helper.MenuFrame):
                                     lambda _: helper.NumPad(prod_mode=self.prod_mode,
                                                             input_field=self.water_ratio_entry,
                                                             input_type="float",
-                                                            info_message="Mahlgut/500ml Wasser (gr.)"))
+                                                            info_message="Mahlgut/500 ml Wasser (gr.)"))
 
         # brew_speed_ml_per_minute
         self.brew_speed_var = tk.StringVar()
@@ -416,9 +491,10 @@ class SettingsMenu(helper.MenuFrame):
             self.attributes("-fullscreen", True)
 
     def quit(self):
+        """Quit the application; shut down all processes if running in productive mode"""
         if self.prod_mode:
-            glob_var.switch_process.stop()
-            glob_var.switch_process.join()
+            glob_var.relay_process.stop()
+            glob_var.relay_process.join()
 
             glob_var.spinner_process.stop()
             glob_var.spinner_process.join()

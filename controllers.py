@@ -1,3 +1,6 @@
+"""Includes subprocesses to control motors, sensors and relays. Package gets imported by main.py
+only in productive mode"""
+
 import multiprocessing
 import RPi.GPIO as GPIO
 import time
@@ -9,42 +12,46 @@ import glob_var
 GPIO.setwarnings(False)
 
 
-class SwitchController(multiprocessing.Process):
+class RelayController(multiprocessing.Process):
+    """Control status of relays for valves and heating element"""
     def __init__(self, mp_data):
         multiprocessing.Process.__init__(self)
         self.mp_data = mp_data
-        self.brewer_switch_relais_state = False
-        self.heater_switch_relais_state = False
-        self.heater_on_off_relais_state = False
+        self.brewer_valve_relay_state = False
+        self.heater_valve_relay_state = False
+        self.heater_relay_state = False
 
     def set_pins(self):
+        """Configure pins of raspberry pi and set them to default values"""
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(glob_var.PIN_HEATER_SWITCH_RELAIS, GPIO.OUT)
-        GPIO.setup(glob_var.PIN_BREWER_SWITCH_RELAIS, GPIO.OUT)
-        GPIO.setup(glob_var.PIN_HEATER_ON_OFF_RELAIS, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_HEATER_VALVE_RELAY, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_BREWER_VALVE_RELAY, GPIO.OUT)
+        GPIO.setup(glob_var.PIN_HEATER_RELAY, GPIO.OUT)
 
-        GPIO.output(glob_var.PIN_HEATER_SWITCH_RELAIS, self.heater_switch_relais_state)
-        GPIO.output(glob_var.PIN_BREWER_SWITCH_RELAIS, self.brewer_switch_relais_state)
-        GPIO.output(glob_var.PIN_HEATER_ON_OFF_RELAIS, self.heater_on_off_relais_state)
+        GPIO.output(glob_var.PIN_HEATER_VALVE_RELAY, self.heater_valve_relay_state)
+        GPIO.output(glob_var.PIN_BREWER_VALVE_RELAY, self.brewer_valve_relay_state)
+        GPIO.output(glob_var.PIN_HEATER_RELAY, self.heater_relay_state)
 
     def run(self):
-        print("switch process running")
+        """Start process (overwrites inherited method). Within an infinite while-loop the process
+        checks for changes in the multiprocessing manager dictionary and sets the respective relay
+        to the new state."""
         self.set_pins()
         while True:
-            # heater switch relais
-            if self.mp_data["heater_switch"] != self.heater_switch_relais_state:
-                GPIO.output(glob_var.PIN_HEATER_SWITCH_RELAIS, self.mp_data["heater_switch"])
-                self.heater_switch_relais_state = self.mp_data["heater_switch"]
+            """heater valve relay"""
+            if self.mp_data["heater_valve"] != self.heater_valve_relay_state:
+                GPIO.output(glob_var.PIN_HEATER_VALVE_RELAY, self.mp_data["heater_valve"])
+                self.heater_valve_relay_state = self.mp_data["heater_valve"]
 
-            # brewer switch relais
-            if self.mp_data["brewer_switch"] != self.brewer_switch_relais_state:
-                GPIO.output(glob_var.PIN_BREWER_SWITCH_RELAIS, self.mp_data["brewer_switch"])
-                self.brewer_switch_relais_state = self.mp_data["brewer_switch"]
+            """brewer valve relay"""
+            if self.mp_data["brewer_valve"] != self.brewer_valve_relay_state:
+                GPIO.output(glob_var.PIN_BREWER_VALVE_RELAY, self.mp_data["brewer_valve"])
+                self.brewer_valve_relay_state = self.mp_data["brewer_valve"]
 
-            # heater on off relais
-            if self.mp_data["heater"] != self.heater_on_off_relais_state:
-                GPIO.output(glob_var.PIN_HEATER_ON_OFF_RELAIS, self.mp_data["heater"])
-                self.heater_on_off_relais_state = self.mp_data["heater"]
+            """heater relay"""
+            if self.mp_data["heater"] != self.heater_relay_state:
+                GPIO.output(glob_var.PIN_HEATER_RELAY, self.mp_data["heater"])
+                self.heater_relay_state = self.mp_data["heater"]
 
 
 class SpinnerController(multiprocessing.Process):
@@ -62,6 +69,7 @@ class SpinnerController(multiprocessing.Process):
         self.spr = 6400 * 2  # steps per revolution
 
     def run(self):
+        """Start process (overwrites inherited method)"""
         self.set_pins()
         threading.Thread(target=self.handler).start()
 
@@ -155,11 +163,11 @@ class SpinnerController(multiprocessing.Process):
 
 
 class PumpController(multiprocessing.Process):
-    def __init__(self, task_queue, process_data, switch_mp_data, config_json):
+    def __init__(self, task_queue, process_data, relay_mp_data, config_json):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.process_data = process_data
-        self.switch_mp_data = switch_mp_data
+        self.relay_mp_data = relay_mp_data
 
         self.revolution = 0
         self.direction = 0
@@ -195,8 +203,8 @@ class PumpController(multiprocessing.Process):
                 pass
 
             elif task_dict["task"] == "volume_revolution_calibration":
-                self.switch_mp_data["brewer_switch"] = True
-                self.switch_mp_data["heater_switch"] = False
+                self.relay_mp_data["brewer_valve"] = True
+                self.relay_mp_data["heater_valve"] = False
                 self.actual_delay = 0
                 self.task_target_steps = self.volume_calibration_target_steps
                 self.process_data["target_steps"] = self.task_target_steps
@@ -228,10 +236,10 @@ class PumpController(multiprocessing.Process):
 
 
 class HeaterController(multiprocessing.Process):
-    def __init__(self, switch_mp_data, pump_mp_data, heater_mp_data):
+    def __init__(self, relay_mp_data, pump_mp_data, heater_mp_data):
         multiprocessing.Process.__init__(self)
 
-        self.switch_mp_data = switch_mp_data
+        self.relay_mp_data = relay_mp_data
         self.pump_mp_data = pump_mp_data
         self.heater_mp_data = heater_mp_data
 
@@ -244,3 +252,13 @@ class HeaterController(multiprocessing.Process):
 
     def handler(self):
         pass
+
+
+class BrewingProcess(multiprocessing.Process):
+    def __init__(self, relay_mp_data, pump_mp_data, heater_mp_data, spinner_mp_data):
+        multiprocessing.Process.__init__(self)
+
+        self.relay_mp_data = relay_mp_data
+        self.pump_mp_data = pump_mp_data
+        self.heater_mp_data = heater_mp_data
+        self.spinner_mp_data = spinner_mp_data

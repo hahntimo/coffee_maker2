@@ -310,12 +310,14 @@ class HeaterMenu(helper.MenuFrame):
 
     def clear_graph(self):
         self.ax.clear()
-        self.canvas.draw()
         self.x_values = []
         self.y_values = []
+        self.ax.patch.set_facecolor(glob_style.background_color_master)
+        self.ax.plot(self.x_values, self.y_values, color=glob_style.font_color)
+        self.canvas.draw()
 
     def update_data(self):
-        if glob_var.switch_mp_data["heater"]:
+        if glob_var.relay_mp_data["heater"]:
             self.x_values.append(max(self.x_values) + 0.5) if self.x_values else self.x_values.append(0)
             if self.prod_mode:
                 self.y_values.append(glob_var.heater_mp_data["current_temp"])
@@ -328,9 +330,9 @@ class HeaterMenu(helper.MenuFrame):
 
     def start_stop(self):
         # stop
-        if glob_var.switch_mp_data["heater"]:
+        if glob_var.relay_mp_data["heater"]:
             glob_var.heater_mp_data["heating_up"] = False
-            glob_var.switch_mp_data["heater"] = False
+            glob_var.relay_mp_data["heater"] = False
             self.button_text.set("Start")
 
         # start
@@ -343,7 +345,7 @@ class HeaterMenu(helper.MenuFrame):
         else:
             glob_var.heater_mp_data["target_temp"] = float(self.target_temp_entry.get())
             glob_var.heater_mp_data["heating_up"] = True
-            glob_var.switch_mp_data["heater"] = True
+            glob_var.relay_mp_data["heater"] = True
             self.button_text.set("Stop")
             self.update_data()
 
@@ -446,11 +448,11 @@ class SwitchMenu(helper.MenuFrame):
     @staticmethod
     def change_switch_state(mode):
         if mode == "heater":
-            glob_var.switch_mp_data["brewer_switch"] = False
-            glob_var.switch_mp_data["heater_switch"] = True
+            glob_var.relay_mp_data["brewer_valve"] = False
+            glob_var.relay_mp_data["heater_valve"] = True
         elif mode == "brewer":
-            glob_var.switch_mp_data["brewer_switch"] = True
-            glob_var.switch_mp_data["heater_switch"] = False
+            glob_var.relay_mp_data["brewer_valve"] = True
+            glob_var.relay_mp_data["heater_valve"] = False
 
     def return_menu(self):
         glob_var.test_frame.deiconify()

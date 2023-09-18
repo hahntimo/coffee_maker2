@@ -1,3 +1,5 @@
+"""Includes all global variables"""
+
 # --- menu frames ---
 boot_frame = None
 main_menu_frame = None
@@ -26,14 +28,14 @@ spinner_process = None
 spinner_task_queue = None
 spinner_output_queue = None
 
-switch_process = None
-switch_mp_data = None
+relay_process = None
+relay_mp_data = None
 
 # --- pins ---
 # relays
-PIN_BREWER_SWITCH_RELAIS = 13
-PIN_HEATER_SWITCH_RELAIS = 6
-PIN_HEATER_ON_OFF_RELAIS = 5
+PIN_BREWER_VALVE_RELAY = 13
+PIN_HEATER_VALVE_RELAY = 6
+PIN_HEATER_RELAY = 5
 
 # spinner
 PIN_SPINNER_DIRECTION = 19

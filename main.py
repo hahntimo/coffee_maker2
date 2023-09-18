@@ -71,11 +71,11 @@ def run(opt):
 
     # define mp managers & mp data handlers
     # switch
-    switch_manager = Manager()
-    glob_var.switch_mp_data = switch_manager.dict()
-    glob_var.switch_mp_data["heater_switch"] = True
-    glob_var.switch_mp_data["brewer_switch"] = False
-    glob_var.switch_mp_data["heater"] = False
+    relay_manager = Manager()
+    glob_var.relay_mp_data = relay_manager.dict()
+    glob_var.relay_mp_data["heater_valve"] = True
+    glob_var.relay_mp_data["brewer_valve"] = False
+    glob_var.relay_mp_data["heater"] = False
 
     # spinner
     glob_var.spinner_task_queue = Queue()
@@ -98,29 +98,29 @@ def run(opt):
     if opt.prod_mode:
         import controllers
 
-        # switch
-        glob_var.switch_process = controllers.SwitchController(glob_var.switch_mp_data)
-        glob_var.switch_process.start()
+        """relay controller"""
+        glob_var.relay_process = controllers.RelayController(glob_var.relay_mp_data)
+        glob_var.relay_process.start()
 
-        # spinner
+        """turntable controller"""
         glob_var.spinner_process = \
             controllers.SpinnerController(task_queue=glob_var.spinner_task_queue,
                                           output_queue=glob_var.spinner_output_queue,
                                           runtime_delay=glob_var.config_json["calibration"]["spinner_step_delay"])
         glob_var.spinner_process.start()
 
-        # pump
+        """pump controller"""
         glob_var.pump_process = \
             controllers.PumpController(task_queue=glob_var.pump_task_queue,
                                        process_data=glob_var.pump_mp_data,
-                                       switch_mp_data=glob_var.switch_mp_data,
+                                       relay_mp_data=glob_var.relay_mp_data,
                                        config_json=glob_var.config_json
                                        )
         glob_var.pump_process.start()
 
-        # heater
+        """heater controller"""
         glob_var.heater_process = \
-            controllers.HeaterController(switch_mp_data=glob_var.switch_mp_data,
+            controllers.HeaterController(relay_mp_data=glob_var.relay_mp_data,
                                          pump_mp_data=glob_var.pump_mp_data,
                                          heater_mp_data=glob_var.heater_mp_data)
         glob_var.heater_process.start()
