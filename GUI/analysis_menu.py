@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from ttkthemes import ThemedStyle
 import json
 import time
 from matplotlib.figure import Figure
@@ -420,6 +421,12 @@ class SwitchMenu(helper.MenuFrame):
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
+        self.default_button_style = ThemedStyle()
+        self.green_button_style = ThemedStyle()
+        self.green_button_style.configure("green.TButton", background="green")
+        self.red_button_style = ThemedStyle()
+        self.red_button_style.configure("red.TButton", background="red")
+
         self.menu_label = ttk.Label(self, text="Wassserweiche")
         self.menu_label.grid(row=0, column=0, sticky="n", padx=5, pady=5)
 
@@ -445,14 +452,17 @@ class SwitchMenu(helper.MenuFrame):
         self.return_button = ttk.Button(self, text="\u21E6", command=self.return_menu)
         self.return_button.grid(row=2, column=0, columnspan=2, sticky="wes", padx=5, pady=5)
 
-    @staticmethod
-    def change_switch_state(mode):
+    def change_switch_state(self, mode):
         if mode == "heater":
             glob_var.relay_mp_data["brewer_valve"] = False
             glob_var.relay_mp_data["heater_valve"] = True
+            self.set_brew_state_button["style"] = "red.TButton"
+            self.set_heater_state_button["style"] = "green.TButton"
         elif mode == "brewer":
             glob_var.relay_mp_data["brewer_valve"] = True
             glob_var.relay_mp_data["heater_valve"] = False
+            self.set_brew_state_button["style"] = "green.TButton"
+            self.set_heater_state_button["style"] = "red.TButton"
 
     def return_menu(self):
         glob_var.test_frame.deiconify()

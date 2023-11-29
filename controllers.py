@@ -17,9 +17,9 @@ class RelayController(multiprocessing.Process):
     def __init__(self, mp_data):
         multiprocessing.Process.__init__(self)
         self.mp_data = mp_data
-        self.brewer_valve_relay_state = False
-        self.heater_valve_relay_state = False
-        self.heater_relay_state = False
+        self.brewer_valve_relay_state = True
+        self.heater_valve_relay_state = True
+        self.heater_relay_state = True
 
     def set_pins(self):
         """Configure pins of raspberry pi and set them to default values"""

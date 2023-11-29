@@ -73,7 +73,7 @@ def run(opt):
     # switch
     relay_manager = Manager()
     glob_var.relay_mp_data = relay_manager.dict()
-    glob_var.relay_mp_data["heater_valve"] = True
+    glob_var.relay_mp_data["heater_valve"] = False
     glob_var.relay_mp_data["brewer_valve"] = False
     glob_var.relay_mp_data["heater"] = False
 
